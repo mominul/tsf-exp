@@ -21,7 +21,10 @@ use crate::{DEFAULT_CONF, Error, IME_NAME, Result, extend::ResultExt};
 static CONF: OnceLock<Conf> = OnceLock::new();
 
 pub fn get() -> &'static Conf {
-    CONF.get_or_init(Conf::open_or_default)
+    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    
+        CONF.get_or_init(Conf::open_or_default)
+    
 }
 
 #[derive(Deserialize, Debug)]
@@ -34,27 +37,36 @@ pub struct Conf {
 
 impl Default for Conf {
     fn default() -> Self {
-        toml::from_str(DEFAULT_CONF).unwrap()
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            toml::from_str(DEFAULT_CONF).unwrap()
+        
     }
 }
 
 impl Conf {
     pub fn open() -> Result<Conf> {
-        let path = PathBuf::from(env::var("APPDATA")?)
-            .join(IME_NAME)
-            .join("conf.toml");
-        if !path.exists() {
-            fs::create_dir_all(path.parent().unwrap())?;
-            fs::write(path, DEFAULT_CONF)?;
-            return Ok(Conf::default());
-        }
-        let conf = fs::read_to_string(path)?;
-        let conf = toml::from_str(&conf).map_err(|e| Error::ParseError("conf.toml", e))?;
-        Ok(conf)
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            let path = PathBuf::from(env::var("APPDATA")?)
+                .join(IME_NAME)
+                .join("conf.toml");
+            if !path.exists() {
+                fs::create_dir_all(path.parent().unwrap())?;
+                fs::write(path, DEFAULT_CONF)?;
+                return Ok(Conf::default());
+            }
+            let conf = fs::read_to_string(path)?;
+            let conf = toml::from_str(&conf).map_err(|e| Error::ParseError("conf.toml", e))?;
+            Ok(conf)
+        
     }
 
     pub fn open_or_default() -> Conf {
-        Conf::open().log_err().unwrap_or_default()
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            Conf::open().log_err().unwrap_or_default()
+        
     }
 }
 
@@ -96,6 +108,9 @@ pub enum Toggle {
 
 #[test]
 fn test_open() {
-    let conf = get();
-    println!("{conf:#?}")
+    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    
+        let conf = get();
+        println!("{conf:#?}")
+    
 }

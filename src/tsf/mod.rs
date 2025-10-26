@@ -88,100 +88,127 @@ struct TextServiceInner {
 impl TextService {
     #[logfn(err = "Error")]
     pub fn create() -> Result<ITfTextInputProcessor> {
-        let inner = TextServiceInner {
-            engine: Engine::build_or_default(),
-            tid: 0,
-            thread_mgr: None,
-            context: None,
-            hkl: hkl_or_us(),
-            char_buf: String::with_capacity(4),
-            fresh_ctrl: false,
-            disabled_by_ctrl: false,
-            cookie: None,
-            composition: None,
-            spelling: String::with_capacity(32),
-            suggestions: Vec::new(),
-            selected: String::with_capacity(32),
-            preedit: String::with_capacity(32),
-            icon: HICON::default(),
-            candidate_list: None,
-            display_attribute: None,
-            interface: None,
-        };
-        let text_service = TextService {
-            inner: RwLock::new(inner),
-        };
-        // from takes ownership of the object and returns a smart pointer
-        let interface = ITfTextInputProcessor::from(text_service);
-        // inject the smart pointer back to the object
-        let text_service: &TextService = unsafe { interface.as_impl() };
-        text_service.write()?.interface = Some(interface.clone());
-        // cast the interface to desired type
-        interface.cast()
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            let inner = TextServiceInner {
+                engine: Engine::build_or_default(),
+                tid: 0,
+                thread_mgr: None,
+                context: None,
+                hkl: hkl_or_us(),
+                char_buf: String::with_capacity(4),
+                fresh_ctrl: false,
+                disabled_by_ctrl: false,
+                cookie: None,
+                composition: None,
+                spelling: String::with_capacity(32),
+                suggestions: Vec::new(),
+                selected: String::with_capacity(32),
+                preedit: String::with_capacity(32),
+                icon: HICON::default(),
+                candidate_list: None,
+                display_attribute: None,
+                interface: None,
+            };
+            let text_service = TextService {
+                inner: RwLock::new(inner),
+            };
+            // from takes ownership of the object and returns a smart pointer
+            let interface = ITfTextInputProcessor::from(text_service);
+            // inject the smart pointer back to the object
+            let text_service: &TextService = unsafe { interface.as_impl() };
+            text_service.write()?.interface = Some(interface.clone());
+            // cast the interface to desired type
+            interface.cast()
+        
     }
 
     fn write(&self) -> Result<RwLockWriteGuard<'_, TextServiceInner>> {
-        self.inner
-            .try_write()
-            .or_else(|| {
-                warn!("RwLock::try_write returned None.");
-                let timeout = Instant::now() + Duration::from_millis(50);
-                self.inner.try_write_until(timeout)
-            })
-            .ok_or_else(|| {
-                error!("Failed to obtain write lock.");
-                E_FAIL.into()
-            })
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            self.inner
+                .try_write()
+                .or_else(|| {
+                    warn!("RwLock::try_write returned None.");
+                    let timeout = Instant::now() + Duration::from_millis(50);
+                    self.inner.try_write_until(timeout)
+                })
+                .ok_or_else(|| {
+                    error!("Failed to obtain write lock.");
+                    E_FAIL.into()
+                })
+        
     }
 
     fn try_write(&self) -> Result<RwLockWriteGuard<'_, TextServiceInner>> {
-        self.inner.try_write().ok_or_else(|| E_FAIL.into())
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            self.inner.try_write().ok_or_else(|| E_FAIL.into())
+        
     }
 }
 
 impl TextServiceInner {
     fn interface<I: Interface>(&self) -> Result<I> {
-        // guarenteed to be Some by TextService::create
-        self.interface.as_ref().unwrap().cast()
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            // guarenteed to be Some by TextService::create
+            self.interface.as_ref().unwrap().cast()
+        
     }
 
     fn thread_mgr(&self) -> Result<&ITfThreadMgr> {
-        self.thread_mgr.as_ref().ok_or_else(|| {
-            error!("Thread manager is None.");
-            E_FAIL.into()
-        })
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            self.thread_mgr.as_ref().ok_or_else(|| {
+                error!("Thread manager is None.");
+                E_FAIL.into()
+            })
+        
     }
 
     fn context(&self) -> Result<&ITfContext> {
-        self.context.as_ref().ok_or_else(|| {
-            error!("Context is None.");
-            E_FAIL.into()
-        })
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            self.context.as_ref().ok_or_else(|| {
+                error!("Context is None.");
+                E_FAIL.into()
+            })
+        
     }
 
     fn candidate_list(&self) -> Result<&CandidateList> {
-        self.candidate_list.as_ref().ok_or(E_FAIL.into())
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            self.candidate_list.as_ref().ok_or(E_FAIL.into())
+        
     }
 
     fn create_candidate_list(&mut self) -> Result<()> {
-        let parent_window = unsafe {
-            self.thread_mgr()?
-                .GetFocus()?
-                .GetTop()?
-                .GetActiveView()?
-                .GetWnd()?
-        };
-        self.candidate_list = Some(CandidateList::create(parent_window)?);
-        Ok(())
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            let parent_window = unsafe {
+                self.thread_mgr()?
+                    .GetFocus()?
+                    .GetTop()?
+                    .GetActiveView()?
+                    .GetWnd()?
+            };
+            self.candidate_list = Some(CandidateList::create(parent_window)?);
+            Ok(())
+        
     }
 
     fn assure_candidate_list(&mut self) -> Result<()> {
-        if self.candidate_list.is_some() {
-            Ok(())
-        } else {
-            debug!("Previous creation of candidate list failed. Recreating now.");
-            self.create_candidate_list()
-        }
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+            if self.candidate_list.is_some() {
+                Ok(())
+            } else {
+                debug!("Previous creation of candidate list failed. Recreating now.");
+                self.create_candidate_list()
+            }
+        
     }
 }
 
