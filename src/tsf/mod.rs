@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 use log::{debug, error, warn};
 use log_derive::logfn;
 use parking_lot::{RwLock, RwLockWriteGuard};
+use riti::{config::Config, context::RitiContext};
 use windows::{
     Win32::{
         Foundation::E_FAIL,
@@ -59,6 +60,7 @@ pub struct TextService {
 struct TextServiceInner {
     // engine
     engine: Engine,
+    riti: RitiContext,
     // Some basic info about the clinet (the program where user is typing)
     tid: u32,
     thread_mgr: Option<ITfThreadMgr>,
@@ -89,9 +91,14 @@ impl TextService {
     #[logfn(err = "Error")]
     pub fn create() -> Result<ITfTextInputProcessor> {
         log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        let mut riti_config = Config::default();
+        riti_config.set_layout_file_path("avro_phonetic");
+        riti_config.set_database_dir("");
+        riti_config.set_phonetic_suggestion(true);
         
             let inner = TextServiceInner {
                 engine: Engine::build_or_default(),
+                riti: RitiContext::new_with_config(&riti_config),
                 tid: 0,
                 thread_mgr: None,
                 context: None,

@@ -1,0 +1,3 @@
+[submodule "riti"]
+	path = riti
+	url = https://github.com/OpenBangla/riti.git
