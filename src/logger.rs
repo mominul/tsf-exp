@@ -40,7 +40,7 @@ fn _setup() -> Result<(), fern::InitError> {
                 message
             ))
         })
-        .level(if RELEASE { Info } else { Debug })
+        .level(if RELEASE { Info } else { Trace })
         .chain(fern::log_file(path)?)
         .apply()?;
     panic::set_hook(Box::new(|panic_info| {

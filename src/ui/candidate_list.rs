@@ -28,7 +28,6 @@ use windows::{
 use crate::{
     CANDI_INDEX_SUFFIX, CANDI_INDEX_SUFFIX_MONO, CANDI_INDEXES,
     conf::{self},
-    engine::Suggestion,
     extend::{ColorExt, OsStrExt2},
     global,
 };

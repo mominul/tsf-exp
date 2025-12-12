@@ -44,6 +44,7 @@ impl TextServiceInner {
             {
                 let _ = edit_session::end_composition(self.tid, context, composition);
             }
+            self.riti.finish_input_session();
             self.composition = None;
             self.spelling.clear();
             self.selected.clear();
