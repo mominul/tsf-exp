@@ -52,7 +52,7 @@ type LongPointer = i32;
 
 /// To create a window you need to register the window class beforehand.
 pub fn setup() -> Result<()> {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         let wcex = WNDCLASSEXA {
             cbSize: size_of::<WNDCLASSEXA>() as u32,
@@ -86,7 +86,7 @@ unsafe extern "system" fn wind_proc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         match msg {
             WM_PAINT => paint(window),
@@ -111,7 +111,7 @@ pub struct CandidateList {
 
 impl CandidateList {
     pub fn create(_parent_window: HWND) -> Result<CandidateList> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             // WS_EX_TOOLWINDOW:  A floating toolbar that won't appear in taskbar and ALT+TAB.
             // WS_EX_NOACTIVATE:  A window that doesn't take the foreground thus not making parent window lose focus.
@@ -204,7 +204,7 @@ impl CandidateList {
     }
 
     pub fn locate(&self, x: i32, y: i32) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("locate({x}, {y})");
             unsafe {
@@ -224,7 +224,7 @@ impl CandidateList {
     }
 
     pub fn show(&self, suggs: &[Suggestion]) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             unsafe {
                 let conf = conf::get();
@@ -325,7 +325,7 @@ impl CandidateList {
     }
 
     pub fn hide(&self) {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             unsafe {
                 ShowWindow(self.window, SW_HIDE);
@@ -334,7 +334,7 @@ impl CandidateList {
     }
 
     pub fn destroy(&self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             unsafe { DestroyWindow(self.window) }
         
@@ -358,13 +358,13 @@ struct PaintArg {
 }
 impl PaintArg {
     fn into_long_ptr(self) -> LongPointer {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             ManuallyDrop::new(Box::new(self)).as_ref() as *const PaintArg as LongPointer
         
     }
     unsafe fn from_long_ptr(long_ptr: LongPointer) -> Option<Box<PaintArg>> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if long_ptr == 0 {
                 None
@@ -375,7 +375,7 @@ impl PaintArg {
     }
 }
 fn paint(window: HWND) -> LRESULT {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         let conf = conf::get();
         // load the extra arg
@@ -491,7 +491,7 @@ fn paint(window: HWND) -> LRESULT {
 
 #[allow(non_snake_case)]
 unsafe fn TextOut(hdc: HDC, x: i32, y: i32, wchars: &[u16], color: &Color, font: HFONT) {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         unsafe {
             SelectObject(hdc, font);
@@ -503,7 +503,7 @@ unsafe fn TextOut(hdc: HDC, x: i32, y: i32, wchars: &[u16], color: &Color, font:
 
 #[allow(non_snake_case)]
 unsafe fn FillRect(hdc: HDC, x: i32, y: i32, width: i32, height: i32, color: &Color) {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         let rect = RECT {
             left: x,

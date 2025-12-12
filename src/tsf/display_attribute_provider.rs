@@ -27,13 +27,13 @@ use crate::{DISPLAY_ATTR_ID, global};
 #[allow(non_snake_case)]
 impl ITfDisplayAttributeProvider_Impl for TextService {
     fn EnumDisplayAttributeInfo(&self) -> Result<IEnumTfDisplayAttributeInfo> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Ok(EnumDisplayAttributeInfo::create())
         
     }
     fn GetDisplayAttributeInfo(&self, guid: *const GUID) -> Result<ITfDisplayAttributeInfo> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if unsafe { *guid == global::DISPLAY_ATTR_ID } {
                 Ok(DisplayAttributeInfo::create())
@@ -57,7 +57,7 @@ struct EnumDisplayAttributeInfo {
 }
 impl EnumDisplayAttributeInfo {
     fn create() -> IEnumTfDisplayAttributeInfo {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             IEnumTfDisplayAttributeInfo::from(Self {
                 enumerated: AtomicBool::new(false),
@@ -69,7 +69,7 @@ impl EnumDisplayAttributeInfo {
 #[allow(non_snake_case)]
 impl IEnumTfDisplayAttributeInfo_Impl for EnumDisplayAttributeInfo {
     fn Clone(&self) -> Result<IEnumTfDisplayAttributeInfo> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Err(E_NOTIMPL.into())
         
@@ -81,7 +81,7 @@ impl IEnumTfDisplayAttributeInfo_Impl for EnumDisplayAttributeInfo {
         info: *mut Option<ITfDisplayAttributeInfo>,
         fetched: *mut u32,
     ) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             // Dear MS please fix these raw pointers thanks
             unsafe {
@@ -97,7 +97,7 @@ impl IEnumTfDisplayAttributeInfo_Impl for EnumDisplayAttributeInfo {
     }
 
     fn Reset(&self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.enumerated.fetch_and(false, Relaxed);
             Ok(())
@@ -105,7 +105,7 @@ impl IEnumTfDisplayAttributeInfo_Impl for EnumDisplayAttributeInfo {
     }
 
     fn Skip(&self, count: u32) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if count > 0 {
                 self.enumerated.fetch_and(true, Relaxed);
@@ -126,7 +126,7 @@ impl IEnumTfDisplayAttributeInfo_Impl for EnumDisplayAttributeInfo {
 pub struct DisplayAttributeInfo;
 impl DisplayAttributeInfo {
     pub fn create() -> ITfDisplayAttributeInfo {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             ITfDisplayAttributeInfo::from(Self {})
         
@@ -136,21 +136,21 @@ impl DisplayAttributeInfo {
 #[allow(non_snake_case)]
 impl ITfDisplayAttributeInfo_Impl for DisplayAttributeInfo {
     fn GetGUID(&self) -> Result<GUID> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Ok(DISPLAY_ATTR_ID)
         
     }
 
     fn GetDescription(&self) -> Result<BSTR> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Err(E_INVALIDARG.into())
         
     }
 
     fn GetAttributeInfo(&self, attr: *mut TF_DISPLAYATTRIBUTE) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             unsafe {
                 *attr = TF_DISPLAYATTRIBUTE {
@@ -167,14 +167,14 @@ impl ITfDisplayAttributeInfo_Impl for DisplayAttributeInfo {
     }
 
     fn SetAttributeInfo(&self, _attr: *const TF_DISPLAYATTRIBUTE) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Err(E_NOTIMPL.into())
         
     }
 
     fn Reset(&self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Err(E_NOTIMPL.into())
         

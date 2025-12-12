@@ -26,7 +26,7 @@ pub struct Engine {
 
 impl Default for Engine {
     fn default() -> Engine {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Engine {
                 schemas: VecDeque::from([Schema::from(SITELEN_DICT), Schema::from(EMOJI_DICT)]),
@@ -39,7 +39,7 @@ impl Default for Engine {
 
 impl Engine {
     pub fn build() -> Result<Engine> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let mut schemas = VecDeque::new();
             let mut default_schema = None;
@@ -82,7 +82,7 @@ impl Engine {
     }
 
     pub fn build_or_default() -> Engine {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             match Engine::build() {
                 Ok(engine) => engine,
@@ -95,14 +95,14 @@ impl Engine {
     }
 
     fn schema(&self) -> &Schema {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.schemas.front().unwrap()
         
     }
 
     pub fn next_schema(&mut self) {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.schemas.rotate_left(1);
             self.squote_open = false;
@@ -111,7 +111,7 @@ impl Engine {
     }
 
     pub fn remap_punct(&mut self, punct: char) -> char {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             match punct {
                 '\'' => {
@@ -136,7 +136,7 @@ impl Engine {
     }
 
     pub fn suggest(&self, spelling: &str) -> Vec<Suggestion> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if !spelling.is_ascii() {
                 return Vec::new();
@@ -200,7 +200,7 @@ impl Engine {
 
 #[test]
 fn repl() {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         use std::io::stdin;
         let engine = Engine::build().unwrap();

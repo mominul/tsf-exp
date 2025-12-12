@@ -21,7 +21,7 @@ use crate::{DEFAULT_CONF, Error, IME_NAME, Result, extend::ResultExt};
 static CONF: OnceLock<Conf> = OnceLock::new();
 
 pub fn get() -> &'static Conf {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         CONF.get_or_init(Conf::open_or_default)
     
@@ -37,7 +37,7 @@ pub struct Conf {
 
 impl Default for Conf {
     fn default() -> Self {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             toml::from_str(DEFAULT_CONF).unwrap()
         
@@ -46,7 +46,7 @@ impl Default for Conf {
 
 impl Conf {
     pub fn open() -> Result<Conf> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let path = PathBuf::from(env::var("APPDATA")?)
                 .join(IME_NAME)
@@ -63,7 +63,7 @@ impl Conf {
     }
 
     pub fn open_or_default() -> Conf {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             Conf::open().log_err().unwrap_or_default()
         
@@ -108,7 +108,7 @@ pub enum Toggle {
 
 #[test]
 fn test_open() {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         let conf = get();
         println!("{conf:#?}")

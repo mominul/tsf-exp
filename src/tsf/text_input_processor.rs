@@ -18,7 +18,7 @@ use crate::{DISPLAY_ATTR_ID};
 #[allow(non_snake_case)]
 impl ITfTextInputProcessor_Impl for TextService {
     fn Activate(&self, thread_mgr: Option<&ITfThreadMgr>, tid: u32) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("Activate({tid})");
             let mut inner = self.write()?;
@@ -54,7 +54,7 @@ impl ITfTextInputProcessor_Impl for TextService {
     }
 
     fn Deactivate(&self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("Deactivate");
             let mut inner = self.write()?;
@@ -87,7 +87,7 @@ impl ITfTextInputProcessor_Impl for TextService {
 #[allow(non_snake_case)]
 impl ITfTextInputProcessorEx_Impl for TextService {
     fn ActivateEx(&self, thread_mgr: Option<&ITfThreadMgr>, tid: u32, _dwflags: u32) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.Activate(thread_mgr, tid)
         

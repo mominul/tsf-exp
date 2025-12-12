@@ -50,7 +50,7 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         lparam: LPARAM,
     ) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("OnTestKeyDown({:#04X})", wparam.0);
             let mut inner = self.write()?;
@@ -88,7 +88,7 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         lparam: LPARAM,
     ) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("OnKeyDown({:#04X})", wparam.0);
             let mut inner = self.write()?;
@@ -116,7 +116,7 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         _lparam: LPARAM,
     ) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("OnTestKeyUp({:#04X})", wparam.0);
             if is_ctrl(wparam) {
@@ -136,7 +136,7 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         _lparam: LPARAM,
     ) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("OnKeyUp({:#04X})", wparam.0);
             if is_ctrl(wparam) {
@@ -152,7 +152,7 @@ impl ITfKeyEventSink_Impl for TextService {
 
     /// I 've never seen this thing called.
     fn OnPreservedKey(&self, _context: Option<&ITfContext>, rguid: *const GUID) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!(
                 "OnPreservedKey({:?})",
@@ -163,7 +163,7 @@ impl ITfKeyEventSink_Impl for TextService {
     }
 
     fn OnSetFocus(&self, foreground: BOOL) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("OnSetFocus({})", foreground.as_bool());
             if !foreground.as_bool() {
@@ -176,7 +176,7 @@ impl ITfKeyEventSink_Impl for TextService {
 }
 
 fn is_ctrl(wparam: WPARAM) -> bool {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         wparam.0 == VK_CONTROL.0 as usize
             || wparam.0 == VK_LCONTROL.0 as usize
@@ -186,7 +186,7 @@ fn is_ctrl(wparam: WPARAM) -> bool {
 
 impl TextServiceInner {
     fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             // let hkl = self.hkl.ok_or(Error::HKLMissing)?;
             let hkl = self.hkl;
@@ -233,7 +233,7 @@ enum Shortcut {
 
 impl Shortcut {
     fn try_from(key_code: usize) -> Option<Shortcut> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
             let alt = VK_MENU.is_down();
@@ -274,7 +274,7 @@ enum Input {
 
 impl TextServiceInner {
     fn test_input(&self, input: Input) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("test_input({:?})", input);
             if self.composition.is_none() {
@@ -346,7 +346,7 @@ impl TextServiceInner {
     }
 
     fn insert_char(&mut self, ch: char) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.char_buf.clear();
             self.char_buf.push(ch);
@@ -356,7 +356,7 @@ impl TextServiceInner {
     }
 
     fn test_shortcut(&self, shortcut: Shortcut) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self.composition.is_none() {
                 match shortcut {
@@ -370,7 +370,7 @@ impl TextServiceInner {
     }
 
     fn handle_shortcut(&mut self, shortcut: Shortcut) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self.composition.is_none() {
                 match shortcut {
@@ -397,7 +397,7 @@ impl TextServiceInner {
 
 impl TextServiceInner {
     fn disabled_naively(&self) -> bool {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             match conf::get().behavior.toggle {
                 Some(Toggle::Ctrl) => self.disabled_by_ctrl,
@@ -408,7 +408,7 @@ impl TextServiceInner {
     }
 
     fn disabled_by_capslock(&self) -> bool {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             match conf::get().behavior.toggle {
                 Some(Toggle::Ctrl) | Some(Toggle::Eisu) | None => false,
@@ -418,7 +418,7 @@ impl TextServiceInner {
     }
 
     fn test_uppercase_input(&self, input: Input) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("test_uppercase_input({:?})", input);
             // non-ascii letters are actually categorized under Punct... my bad.
@@ -434,7 +434,7 @@ impl TextServiceInner {
         input: Input,
         context: Option<&ITfContext>,
     ) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("handle_uppercase_input({:?})", input);
             let Some(context) = context else {

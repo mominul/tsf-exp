@@ -11,7 +11,7 @@ struct Sentence {
 
 impl Sentence {
     fn push_unique(&mut self, unique: &str, len: usize) {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.push_word(unique, len);
             self.score += len * 20;
@@ -19,7 +19,7 @@ impl Sentence {
     }
 
     fn push_exact(&mut self, exact: &str, len: usize) {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.push_word(exact, len);
             self.score += len
@@ -32,7 +32,7 @@ impl Sentence {
     }
 
     fn push_word(&mut self, word: &str, len: usize) {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self
                 .output
@@ -52,7 +52,7 @@ impl Sentence {
     }
 
     fn push_joiner(&mut self, joiner: char) {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.output.push(joiner);
             if let Some(last) = self.groupping.last_mut() {
@@ -67,7 +67,7 @@ impl Sentence {
 #[allow(unused)]
 impl Engine {
     pub(super) fn suggest_sentence(&self, spelling: &str) -> Option<Suggestion> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let mut sents = self.suggest_sentences(spelling);
             let mut best_sent = None;
@@ -91,7 +91,7 @@ impl Engine {
     }
 
     fn suggest_sentences(&self, spelling: &str) -> Vec<Sentence> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let mut sent = Sentence::default();
             let mut sents = Vec::new();
@@ -107,7 +107,7 @@ impl Engine {
         sent: &mut Sentence,
         sents: &mut Vec<Sentence>,
     ) {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             // push leading joiners into the sentence directly
             let mut spelling = spelling;
@@ -179,7 +179,7 @@ impl Engine {
 
 #[test]
 fn repl() {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         use std::io::stdin;
         let engine = Engine::build_or_default();
@@ -198,7 +198,7 @@ fn repl() {
 }
 #[test]
 fn test() {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         fn assert_sent(engine: &Engine, spelling: &str, expected: &str) {
             let sent = engine.suggest_sentence(spelling).unwrap().output;

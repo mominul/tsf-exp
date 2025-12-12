@@ -16,7 +16,7 @@ const START_OF_REVERSE_LONG_GLYGH: char = '󱦚';
 const END_OF_REVERSE_LONG_GLYPH: char = '󱦛';
 
 pub(super) fn insert_long_glyph(text: &mut String) {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         let mut output = String::new();
         let mut open = false;
@@ -142,14 +142,14 @@ pub(super) fn insert_long_glyph(text: &mut String) {
 }
 
 fn ext_as_ala(ch: char) -> bool {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         ch == ALA && conf::get().behavior.long_glyph
     
 }
 
 fn ext_left(ch: char) -> bool {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         match ch {
             PI => conf::get().behavior.long_pi,
@@ -161,7 +161,7 @@ fn ext_left(ch: char) -> bool {
 
 #[allow(unused)]
 fn ext_right(ch: char) -> bool {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         match ch {
             // KAMA is disabled for now because i don't want to handle "tenpo kama la"

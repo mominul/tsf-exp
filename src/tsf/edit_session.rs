@@ -27,7 +27,7 @@ pub fn start_composition(
     context: &ITfContext,
     composition_sink: &ITfCompositionSink,
 ) -> Result<ITfComposition> {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         trace!("start_composition");
         #[implement(ITfEditSession)]
@@ -74,7 +74,7 @@ pub fn start_composition(
 }
 
 pub fn end_composition(tid: u32, context: &ITfContext, composition: &ITfComposition) -> Result<()> {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         trace!("end_composition");
         #[implement(ITfEditSession)]
@@ -104,7 +104,7 @@ pub fn set_text(
     text: &[u16],
     dispaly_attribute: Option<&VARIANT>,
 ) -> Result<()> {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         #[implement(ITfEditSession)]
         struct Session<'a> {
@@ -165,7 +165,7 @@ pub fn set_text(
 }
 
 pub fn insert_text(tid: u32, context: &ITfContext, text: &[u16]) -> Result<()> {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         #[implement(ITfEditSession)]
         struct Session<'a> {
@@ -210,7 +210,7 @@ pub fn insert_text(tid: u32, context: &ITfContext, text: &[u16]) -> Result<()> {
 }
 
 pub fn get_pos(tid: u32, context: &ITfContext, range: &ITfRange) -> Result<(i32, i32)> {
-    log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
     
         #[implement(ITfEditSession)]
         struct Session<'a> {

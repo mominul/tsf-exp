@@ -90,7 +90,7 @@ struct TextServiceInner {
 impl TextService {
     #[logfn(err = "Error")]
     pub fn create() -> Result<ITfTextInputProcessor> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         let mut riti_config = Config::default();
         riti_config.set_layout_file_path("avro_phonetic");
         riti_config.set_database_dir("");
@@ -131,7 +131,7 @@ impl TextService {
     }
 
     fn write(&self) -> Result<RwLockWriteGuard<'_, TextServiceInner>> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.inner
                 .try_write()
@@ -148,7 +148,7 @@ impl TextService {
     }
 
     fn try_write(&self) -> Result<RwLockWriteGuard<'_, TextServiceInner>> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.inner.try_write().ok_or_else(|| E_FAIL.into())
         
@@ -157,7 +157,7 @@ impl TextService {
 
 impl TextServiceInner {
     fn interface<I: Interface>(&self) -> Result<I> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             // guarenteed to be Some by TextService::create
             self.interface.as_ref().unwrap().cast()
@@ -165,7 +165,7 @@ impl TextServiceInner {
     }
 
     fn thread_mgr(&self) -> Result<&ITfThreadMgr> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.thread_mgr.as_ref().ok_or_else(|| {
                 error!("Thread manager is None.");
@@ -175,7 +175,7 @@ impl TextServiceInner {
     }
 
     fn context(&self) -> Result<&ITfContext> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.context.as_ref().ok_or_else(|| {
                 error!("Context is None.");
@@ -185,14 +185,14 @@ impl TextServiceInner {
     }
 
     fn candidate_list(&self) -> Result<&CandidateList> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.candidate_list.as_ref().ok_or(E_FAIL.into())
         
     }
 
     fn create_candidate_list(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let parent_window = unsafe {
                 self.thread_mgr()?
@@ -207,7 +207,7 @@ impl TextServiceInner {
     }
 
     fn assure_candidate_list(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self.candidate_list.is_some() {
                 Ok(())

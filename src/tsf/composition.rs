@@ -23,7 +23,7 @@ use crate::{PREEDIT_DELIMITER, extend::OsStrExt2};
 impl TextServiceInner {
     // there are only two states: composing or not
     pub fn start_composition(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let composition =
                 edit_session::start_composition(self.tid, self.context()?, &self.interface()?)?;
@@ -36,7 +36,7 @@ impl TextServiceInner {
     }
 
     pub fn end_composition(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             // clean up the shit as clean as possbile instead of question-markin' all the way thru
             if let (Some(context), Some(composition)) =
@@ -54,7 +54,7 @@ impl TextServiceInner {
     }
 
     fn udpate_preedit(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.preedit.clear();
             self.preedit.push_str(&self.selected);
@@ -86,7 +86,7 @@ impl TextServiceInner {
     }
 
     fn update_candidate_list(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.assure_candidate_list()?;
             let candidate_list = self.candidate_list()?;
@@ -103,7 +103,7 @@ impl TextServiceInner {
     }
 
     fn set_text(&self, text: &str) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let text = OsString::from(text).to_wchars();
             let range = unsafe { self.composition()?.GetRange()? };
@@ -112,7 +112,7 @@ impl TextServiceInner {
     }
 
     fn get_pos(&self) -> Option<(i32, i32)> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             let range = unsafe { self.composition().ok()?.GetRange().ok()? };
             let pos = edit_session::get_pos(self.tid, self.context().ok()?, &range).ok()?;
@@ -126,7 +126,7 @@ impl TextServiceInner {
     }
 
     fn composition(&self) -> Result<&ITfComposition> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.composition.as_ref().ok_or(E_FAIL.into())
         
@@ -137,7 +137,7 @@ impl TextServiceInner {
 // calling these function while not composing would cause the program to crash
 impl TextServiceInner {
     pub fn push(&mut self, ch: char) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.spelling.push(ch);
             self.suggestions = self.engine.suggest(&self.spelling);
@@ -148,7 +148,7 @@ impl TextServiceInner {
     }
 
     pub fn pop(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             // todo pop can be used to revert selection
             self.spelling.pop();
@@ -164,8 +164,8 @@ impl TextServiceInner {
 
     /// Commit the 1st suggestion, keeping the unrecognizable trailing characters
     pub fn commit(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        self.riti.candidate_committed(0);
             if self.suggestions.is_empty() {
                 self.force_release(' ')
             } else {
@@ -176,7 +176,7 @@ impl TextServiceInner {
 
     /// Commit the 1st suggestion and release the unrecognizable trailing characters.
     pub fn force_commit(&mut self, ch: char) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self.suggestions.is_empty() {
                 self.force_release(ch)
@@ -197,7 +197,7 @@ impl TextServiceInner {
 
     /// Select the desired suggestion by pressing numbers.
     pub fn select(&mut self, index: usize) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if index >= self.suggestions.len() {
                 return Ok(());
@@ -225,7 +225,7 @@ impl TextServiceInner {
 
     // Release the raw ascii chars
     pub fn release(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self.selected.is_empty() {
                 self.set_text(&self.spelling)?;
@@ -239,7 +239,7 @@ impl TextServiceInner {
     }
 
     fn force_release(&mut self, ch: char) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self.selected.is_empty() {
                 self.spelling.push(ch);
@@ -256,7 +256,7 @@ impl TextServiceInner {
 
     // Interupted. Abort everything.
     pub fn abort(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             if self.selected.is_empty() {
                 let _ = self.set_text(&self.spelling);
@@ -279,7 +279,7 @@ impl ITfCompositionSink_Impl for TextService {
         _ecwrite: u32,
         _composition: Option<&ITfComposition>,
     ) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             trace!("OnCompositionTerminated");
             // popping out the last letter will trigger this method.
