@@ -5,7 +5,7 @@ use strum::EnumIter;
 use windows::{
     Win32::{
         Foundation::{GetLastError, HINSTANCE},
-        System::{LibraryLoader::GetModuleFileNameA, SystemServices::{LANG_BANGLA, SUBLANG_NEUTRAL}},
+        System::{LibraryLoader::GetModuleFileNameA, SystemServices::{LANG_BANGLA, SUBLANG_BANGLA_BANGLADESH}},
         UI::TextServices::HKL,
     },
     core::GUID,
@@ -77,7 +77,7 @@ pub const IME_ID: GUID = GUID::from_u128(0xC93D3D59_2FAC_40E0_ABC6_A3658749E2FA)
 pub const LANG_PROFILE_ID: GUID = GUID::from_u128(0xA411A7FC_A082_4B8A_8741_AA4A72613933);
 pub const LANGBAR_ITEM_ID: GUID = GUID::from_u128(0x95288B2B_4D3B_4D4A_BF5B_9342E4F75E4D);
 pub const DISPLAY_ATTR_ID: GUID = GUID::from_u128(0xE42647FB_4BF0_4570_9013_768487C5CAAE);
-pub const TEXTSERVICE_LANGID: u16 = (SUBLANG_NEUTRAL << 10 | LANG_BANGLA) as u16;
+pub const TEXTSERVICE_LANGID: u16 = (SUBLANG_BANGLA_BANGLADESH << 10 | LANG_BANGLA) as u16;
 pub const LITE_TRAY_ICON_INDEX: u32 = 0;
 pub const DARK_TRAY_ICON_INDEX: u32 = 1;
 // customization

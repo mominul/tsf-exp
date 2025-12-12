@@ -125,12 +125,12 @@ pub fn register_ime() -> Result<()> {
                 &icon_file,
                 icon_index,
             )?;
-            input_processor_profiles.SubstituteKeyboardLayout(
-                &IME_ID,
-                TEXTSERVICE_LANGID,
-                &LANG_PROFILE_ID,
-                hkl,
-            )?;
+            // input_processor_profiles.SubstituteKeyboardLayout(
+            //     &IME_ID,
+            //     TEXTSERVICE_LANGID,
+            //     &LANG_PROFILE_ID,
+            //     hkl,
+            // )?;
             log::info!("Registered the language profile.");
             for rcatid in SUPPORTED_CATEGORIES {
                 category_mgr.RegisterCategory(&IME_ID, &rcatid, &IME_ID)?;
