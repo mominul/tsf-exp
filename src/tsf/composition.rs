@@ -165,7 +165,7 @@ impl TextServiceInner {
     /// Commit the 1st suggestion, keeping the unrecognizable trailing characters
     pub fn commit(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        self.riti.candidate_committed(0);
+        //self.riti.candidate_committed(0);
             if self.suggestions.is_empty() {
                 self.force_release(' ')
             } else {

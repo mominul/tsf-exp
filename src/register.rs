@@ -119,7 +119,7 @@ pub fn register_ime() -> Result<()> {
             };
             input_processor_profiles.AddLanguageProfile(
                 &IME_ID,
-                langid,
+                TEXTSERVICE_LANGID,
                 &LANG_PROFILE_ID,
                 &ime_name,
                 &icon_file,
@@ -127,7 +127,7 @@ pub fn register_ime() -> Result<()> {
             )?;
             input_processor_profiles.SubstituteKeyboardLayout(
                 &IME_ID,
-                langid,
+                TEXTSERVICE_LANGID,
                 &LANG_PROFILE_ID,
                 hkl,
             )?;
