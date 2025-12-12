@@ -223,7 +223,7 @@ impl CandidateList {
         
     }
 
-    pub fn show(&self, suggs: &[Suggestion]) -> Result<()> {
+    pub fn show(&self, suggs: &[String]) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             unsafe {
@@ -238,7 +238,7 @@ impl CandidateList {
                 let mut candi_widths = Vec::with_capacity(suggs.len());
         
                 let dc: HDC = GetDC(self.window);
-                for (index, sugg) in suggs.iter().enumerate() {
+                for (index, sugg) in suggs.iter().take(5).enumerate() {
                     let mut size = SIZE::default();
                     let index = format!("{}{}", CANDI_INDEXES[index], self.index_suffix);
                     let index = OsString::from(index).to_wchars();
@@ -248,7 +248,7 @@ impl CandidateList {
                     index_width = max(index_width, size.cx);
                     indice.push(index);
         
-                    let candi = OsString::from(&sugg.output).to_wchars();
+                    let candi = OsString::from(&sugg).to_wchars();
                     SelectObject(dc, self.candi_font);
                     GetTextExtentPoint32W(dc, &candi, &mut size);
                     candi_height = max(candi_height, size.cy);

@@ -5,13 +5,14 @@ mod key_event_sink;
 mod langbar_item;
 pub mod text_input_processor;
 mod thread_mgr_event_sink;
+pub mod keycode;
 
 use std::time::{Duration, Instant};
 
 use log::{debug, error, warn};
 use log_derive::logfn;
 use parking_lot::{RwLock, RwLockWriteGuard};
-use riti::{config::Config, context::RitiContext};
+use riti::{config::Config, context::RitiContext, suggestion::Suggestion};
 use windows::{
     Win32::{
         Foundation::E_FAIL,
@@ -28,7 +29,7 @@ use windows::{
 };
 
 use crate::{
-    engine::{Engine, Suggestion},
+    engine::{Engine},
     global::hkl_or_us,
     ui::candidate_list::CandidateList,
 };
@@ -76,7 +77,7 @@ struct TextServiceInner {
     composition: Option<ITfComposition>,
     spelling: String,
     selected: String,
-    suggestions: Vec<Suggestion>,
+    suggestions: Option<Suggestion>,
     preedit: String,
     // display attribute provider
     display_attribute: Option<VARIANT>,
@@ -109,7 +110,7 @@ impl TextService {
                 cookie: None,
                 composition: None,
                 spelling: String::with_capacity(32),
-                suggestions: Vec::new(),
+                suggestions: None,
                 selected: String::with_capacity(32),
                 preedit: String::with_capacity(32),
                 icon: HICON::default(),

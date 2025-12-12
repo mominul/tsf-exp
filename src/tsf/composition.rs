@@ -10,7 +10,7 @@ use windows::{
 };
 
 use super::{TextService, TextServiceInner, edit_session};
-use crate::{PREEDIT_DELIMITER, extend::OsStrExt2};
+use crate::{PREEDIT_DELIMITER, extend::OsStrExt2, tsf::keycode::char_to_keycode};
 
 //----------------------------------------------------------------------------
 //
@@ -47,7 +47,7 @@ impl TextServiceInner {
             self.composition = None;
             self.spelling.clear();
             self.selected.clear();
-            self.suggestions.clear();
+            self.suggestions = None;
             self.candidate_list()?.hide();
             Ok(())
         
@@ -58,20 +58,21 @@ impl TextServiceInner {
         
             self.preedit.clear();
             self.preedit.push_str(&self.selected);
-            if self.suggestions.is_empty() {
+            if self.suggestions.as_ref().unwrap().is_empty() {
                 self.preedit.push_str(&self.spelling);
             } else {
-                let mut from = 0;
-                for to in &self.suggestions[0].groupping {
-                    self.preedit.push_str(&self.spelling[from..*to]);
-                    self.preedit.push_str(PREEDIT_DELIMITER);
-                    from = *to;
-                }
-                if from != self.spelling.len() {
-                    self.preedit.push_str(&self.spelling[from..])
-                } else {
-                    self.preedit.pop();
-                }
+                // let mut from = 0;
+                // for to in &self.suggestions[0].groupping {
+                //     self.preedit.push_str(&self.spelling[from..*to]);
+                //     self.preedit.push_str(PREEDIT_DELIMITER);
+                //     from = *to;
+                // }
+                // if from != self.spelling.len() {
+                //     self.preedit.push_str(&self.spelling[from..])
+                // } else {
+                //     self.preedit.pop();
+                // }
+                self.preedit.push_str(&self.spelling);
             }
             let range = unsafe { self.composition()?.GetRange()? };
             let text = OsString::from(&self.preedit).to_wchars();
@@ -90,10 +91,10 @@ impl TextServiceInner {
         
             self.assure_candidate_list()?;
             let candidate_list = self.candidate_list()?;
-            if self.suggestions.is_empty() {
+            if self.suggestions.as_ref().unwrap().is_empty() {
                 candidate_list.hide();
             } else {
-                candidate_list.show(&self.suggestions)?;
+                candidate_list.show(self.suggestions.as_ref().unwrap().get_suggestions())?;
                 if let Some((x, y)) = self.get_pos() {
                     candidate_list.locate(x, y)?;
                 }
@@ -140,7 +141,9 @@ impl TextServiceInner {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
             self.spelling.push(ch);
-            self.suggestions = self.engine.suggest(&self.spelling);
+            let key = char_to_keycode(ch);
+
+            self.suggestions = Some(self.riti.get_suggestion_for_key(key, 0, 0)); //self.engine.suggest(&self.spelling);
             self.udpate_preedit()?;
             self.update_candidate_list()?;
             Ok(())
@@ -155,7 +158,7 @@ impl TextServiceInner {
             if self.spelling.is_empty() {
                 return self.abort();
             }
-            self.suggestions = self.engine.suggest(&self.spelling);
+            self.suggestions = Some(self.riti.backspace_event(false)); //self.engine.suggest(&self.spelling);
             self.udpate_preedit()?;
             self.update_candidate_list()?;
             Ok(())
@@ -165,8 +168,9 @@ impl TextServiceInner {
     /// Commit the 1st suggestion, keeping the unrecognizable trailing characters
     pub fn commit(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        //self.riti.candidate_committed(0);
-            if self.suggestions.is_empty() {
+            
+            self.riti.candidate_committed(0);
+            if self.suggestions.as_ref().unwrap().is_empty() {
                 self.force_release(' ')
             } else {
                 self.select(0)
@@ -178,16 +182,16 @@ impl TextServiceInner {
     pub fn force_commit(&mut self, ch: char) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
-            if self.suggestions.is_empty() {
+            if self.suggestions.as_ref().unwrap().is_empty() {
                 self.force_release(ch)
             } else {
-                let sugg = self.suggestions.first().unwrap();
-                self.selected.push_str(&sugg.output);
-                let last = *sugg.groupping.last().unwrap();
-                if last != self.spelling.len() {
-                    self.selected.push(' ');
-                    self.selected.push_str(&self.spelling[last..])
-                }
+                let sugg = self.suggestions.as_ref().unwrap().get_suggestions().first().unwrap();
+                self.selected.push_str(&sugg);
+                // let last = *sugg.groupping.last().unwrap();
+                // if last != self.spelling.len() {
+                //     self.selected.push(' ');
+                //     self.selected.push_str(&self.spelling[last..])
+                // }
                 self.selected.push(ch);
                 self.set_text(&self.selected)?;
                 self.end_composition()
@@ -199,27 +203,27 @@ impl TextServiceInner {
     pub fn select(&mut self, index: usize) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
-            if index >= self.suggestions.len() {
+            if index >= self.suggestions.as_ref().unwrap().len() {
                 return Ok(());
             }
-            let sugg = self.suggestions.get(index).unwrap();
-            let last = *sugg.groupping.last().unwrap();
-            if last == self.spelling.len() {
+            let sugg = self.suggestions.as_ref().unwrap().get_suggestions().get(index).unwrap();
+            // let last = *sugg.groupping.last().unwrap();
+            // if last == self.spelling.len() {
                 if self.selected.is_empty() {
-                    self.set_text(&sugg.output)?;
+                    self.set_text(&sugg)?;
                 } else {
-                    self.selected.push_str(&sugg.output);
+                    self.selected.push_str(&sugg);
                     self.set_text(&self.selected)?;
                 };
                 self.end_composition()
-            } else {
-                self.selected.push_str(&sugg.output);
-                // TODO strip off the begining instead of re allocate
-                self.spelling = self.spelling[last..].to_string();
-                self.suggestions = self.engine.suggest(&self.spelling);
-                self.udpate_preedit()?;
-                self.update_candidate_list()
-            }
+            // } else {
+            //     self.selected.push_str(&sugg.output);
+            //     // TODO strip off the begining instead of re allocate
+            //     self.spelling = self.spelling[last..].to_string();
+            //     self.suggestions = self.engine.suggest(&self.spelling);
+            //     self.udpate_preedit()?;
+            //     self.update_candidate_list()
+            // }
         
     }
 
