@@ -185,6 +185,45 @@ fn is_ctrl(wparam: WPARAM) -> bool {
 }
 
 impl TextServiceInner {
+    // fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
+    //     //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        
+    //         // let hkl = self.hkl.ok_or(Error::HKLMissing)?;
+    //         let hkl = self.hkl;
+    //         let input = match keycode {
+    //             0x08 => Backspace,
+    //             0x09 => Tab,
+    //             0x0D => Enter,
+    //             0x20 => Space,
+    //             0x25 => Left,
+    //             0x26 => Up,
+    //             0x27 => Right,
+    //             0x28 => Down,
+    //             keycode @ 0x00..0x20 | keycode @ 0x7F => Unknown(keycode),
+    //             keycode => {
+    //                 let mut buf = [0; 8];
+    //                 let mut keyboard_state = [0; 256];
+    //                 let ret = unsafe {
+    //                     GetKeyboardState(&mut keyboard_state)?;
+    //                     ToUnicodeEx(keycode, scancode, &keyboard_state, &mut buf, 0, hkl)
+    //                 };
+    //                 if ret == 0 {
+    //                     return Ok(Unknown(keycode));
+    //                 }
+    //                 let Ok(ch) = char::try_from_utf16(buf[0]) else {
+    //                     return Ok(Unknown(keycode));
+    //                 };
+    //                 match ch {
+    //                     number @ '0'..='9' => Number(number as usize - '0' as usize),
+    //                     letter @ 'a'..='z' | letter @ 'A'..='Z' => Letter(letter),
+    //                     punct => Punct(punct),
+    //                 }
+    //             }
+    //         };
+    //         Ok(input)
+        
+    // }
+
     fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         
