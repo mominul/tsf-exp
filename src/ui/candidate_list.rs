@@ -29,7 +29,7 @@ use crate::{
     CANDI_INDEX_SUFFIX, CANDI_INDEX_SUFFIX_MONO, CANDI_INDEXES,
     conf::{self},
     extend::{ColorExt, OsStrExt2},
-    global,
+    global::{self, CANDI_NUM},
 };
 
 const WINDOW_CLASS: PCSTR = s!("CANDIDATE_LIST");
@@ -237,7 +237,7 @@ impl CandidateList {
                 let mut candi_widths = Vec::with_capacity(suggs.len());
         
                 let dc: HDC = GetDC(self.window);
-                for (index, sugg) in suggs.iter().take(5).enumerate() {
+                for (index, sugg) in suggs.iter().take(CANDI_NUM).enumerate() {
                     let mut size = SIZE::default();
                     let index = format!("{}{}", CANDI_INDEXES[index], self.index_suffix);
                     let index = OsString::from(index).to_wchars();

@@ -4,13 +4,13 @@ use log::{debug, trace};
 use windows::{
     Win32::{
         Foundation::E_FAIL,
-        UI::TextServices::{ITfComposition, ITfCompositionSink_Impl},
+        UI::{Input::KeyboardAndMouse::VK_CONTROL, TextServices::{ITfComposition, ITfCompositionSink_Impl}},
     },
     core::Result,
 };
 
 use super::{TextService, TextServiceInner, edit_session};
-use crate::{PREEDIT_DELIMITER, extend::OsStrExt2, tsf::keycode::char_to_keycode};
+use crate::extend::{OsStrExt2, VKExt};
 
 //----------------------------------------------------------------------------
 //
@@ -138,13 +138,12 @@ impl TextServiceInner {
 // handle input and transit state
 // calling these function while not composing would cause the program to crash
 impl TextServiceInner {
-    pub fn push(&mut self, ch: char) -> Result<()> {
+    pub fn keypress(&mut self, key: u16) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        let suggestion = self.riti.get_suggestion_for_key(key, 0, 0);
         
-            self.spelling.push(ch);
-            let key = char_to_keycode(ch);
-
-            self.suggestions = Some(self.riti.get_suggestion_for_key(key, 0, 0)); //self.engine.suggest(&self.spelling);
+        self.spelling = suggestion.get_auxiliary_text().to_string();
+        self.suggestions = Some(suggestion); //self.engine.suggest(&self.spelling);
             self.udpate_preedit()?;
             self.update_candidate_list()?;
             Ok(())
@@ -153,13 +152,17 @@ impl TextServiceInner {
 
     pub fn pop(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+
+            let ctrl = VK_CONTROL.is_down();
+            let suggestion = self.riti.backspace_event(ctrl);
         
             // todo pop can be used to revert selection
-            self.spelling.pop();
-            if self.spelling.is_empty() {
+            if suggestion.is_empty() {
+                self.spelling.clear();
                 return self.abort();
             }
-            self.suggestions = Some(self.riti.backspace_event(false)); //self.engine.suggest(&self.spelling);
+            self.spelling = suggestion.get_auxiliary_text().to_string();
+            self.suggestions = Some(suggestion); //self.engine.suggest(&self.spelling);
             self.udpate_preedit()?;
             self.update_candidate_list()?;
             Ok(())
@@ -200,7 +203,7 @@ impl TextServiceInner {
         
     }
 
-    /// Select the desired suggestion by pressing numbers.
+    /// Select the desired suggestion by pressing numbers. (from the Candidate list)
     pub fn select(&mut self, index: usize) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         

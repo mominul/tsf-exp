@@ -20,7 +20,7 @@ use windows::{
 use super::{TextService, TextServiceInner, edit_session};
 use crate::{
     conf::{self, Toggle},
-    extend::{CharExt, GUIDExt, OsStrExt2, VKExt},
+    extend::{CharExt, GUIDExt, OsStrExt2, VKExt}, tsf::keycode::to_keycode,
 };
 //----------------------------------------------------------------------------
 //
@@ -254,8 +254,7 @@ impl TextServiceInner {
                     };
                     match ch {
                         number @ '0'..='9' => Number(number as usize - '0' as usize),
-                        letter @ 'a'..='z' | letter @ 'A'..='Z' => Letter(letter),
-                        punct => Punct(punct),
+                        _ => Key(to_keycode(ch, keycode)),
                     }
                 }
             };
@@ -293,6 +292,7 @@ enum Input {
     Letter(char),
     Number(usize),
     Punct(char),
+    Key(u16),
     Space,
     Backspace,
     Enter,
@@ -339,43 +339,50 @@ impl TextServiceInner {
             if self.composition.is_none() {
                 match input {
                     // letters start compositions. punctuators need to be re-mapped.
-                    Letter(letter) => {
+                    Key(key) => {
                         self.start_composition()?;
-                        self.push(letter)?
+                        self.keypress(key)?
                     }
-                    Punct(punct) => {
-                        let ch = self.engine.remap_punct(punct);
-                        self.insert_char(ch)?
-                    }
-                    Space => {
-                        let ch = self.engine.remap_punct(' ');
-                        self.insert_char(ch)?
-                    }
+                    // Punct(punct) => {
+                    //     let ch = self.engine.remap_punct(punct);
+                    //     self.insert_char(ch)?
+                    // }
+                    // Space => {
+                    //     let ch = self.engine.remap_punct(' ');
+                    //     self.insert_char(ch)?
+                    // }
                     _ => return Ok(FALSE),
                 }
             } else {
                 match input {
-                    Letter(letter) => self.push(letter)?,
                     Number(0) => (),
                     Number(number) => self.select(number - 1)?,
-                    Punct(punct) => {
-                        let remmaped = self.engine.remap_punct(punct);
-                        if remmaped.is_joiner() {
-                            self.push(punct)?;
-                        } else {
-                            self.force_commit(remmaped)?;
-                        }
+                    Key(key) => self.keypress(key)?,
+                    // Punct(punct) => {
+                    //     let remmaped = self.engine.remap_punct(punct);
+                    //     if remmaped.is_joiner() {
+                    //         self.keypress(punct)?;
+                    //     } else {
+                    //         self.force_commit(remmaped)?;
+                    //     }
+                    // }
+                    Space =>{ 
+                        self.commit()?;
+                        return Ok(FALSE);
+                    },
+                    Enter => {
+                        // self.release()?;
+                        self.commit()?;
+                        return Ok(FALSE);
                     }
-                    Space => self.commit()?,
-                    Enter => self.release()?,
                     Backspace => self.pop()?,
-                    Tab => {
-                        self.push(' ')?;
-                        self.release()?
-                    }
+                    // Tab => {
+                    //     self.keypress(' ')?;
+                    //     self.release()?
+                    // }
                     // disable cursor movement because I am lazy.
                     Left | Up | Right | Down => (),
-                    Unknown(_) => {
+                    _ => {
                         return Ok(FALSE);
                     }
                 }

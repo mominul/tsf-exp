@@ -81,8 +81,8 @@ pub const TEXTSERVICE_LANGID: u16 = (SUBLANG_BANGLA_BANGLADESH << 10 | LANG_BANG
 pub const LITE_TRAY_ICON_INDEX: u32 = 0;
 pub const DARK_TRAY_ICON_INDEX: u32 = 1;
 // customization
-pub const CANDI_NUM: usize = 5;
-pub const CANDI_INDEXES: [&str; CANDI_NUM] = ["1", "2", "3", "4", "5"];
+pub const CANDI_NUM: usize = 9;
+pub const CANDI_INDEXES: [&str; CANDI_NUM] = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 pub const CANDI_INDEX_SUFFIX: &str = ". ";
 pub const CANDI_INDEX_SUFFIX_MONO: &str = ".";
 pub const PREEDIT_DELIMITER: &str = "'";
