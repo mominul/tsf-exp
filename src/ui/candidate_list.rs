@@ -7,7 +7,7 @@ use log::{debug, error, trace};
 use windows::{
     core::{PCSTR, Result, s, w},
     Win32::{
-        Foundation::{BOOL, GetLastError, HWND, LPARAM, LRESULT, RECT, SIZE, WPARAM},
+        Foundation::{BOOL, GetLastError, HWND, LPARAM, LRESULT, RECT, WPARAM},
         Graphics::{
             Direct2D::{
                 Common::{D2D1_ALPHA_MODE_PREMULTIPLIED, D2D1_PIXEL_FORMAT, D2D_RECT_F},
@@ -21,8 +21,8 @@ use windows::{
                 DWriteCreateFactory, IDWriteFactory, IDWriteTextFormat, IDWriteTextLayout,
                 DWRITE_FACTORY_TYPE_SHARED, DWRITE_FONT_STRETCH_NORMAL, DWRITE_FONT_STYLE_NORMAL,
                 DWRITE_FONT_WEIGHT_NORMAL, DWRITE_PARAGRAPH_ALIGNMENT_CENTER,
-                DWRITE_TEXT_ALIGNMENT_LEADING, DWRITE_MEASURING_MODE_NATURAL,
-                DWRITE_TEXT_METRICS,
+                DWRITE_TEXT_ALIGNMENT_LEADING,
+                DWRITE_MEASURING_MODE_NATURAL, DWRITE_TEXT_METRICS,
             },
             Dxgi::Common::DXGI_FORMAT_B8G8R8A8_UNORM,
             Gdi::{
@@ -61,6 +61,14 @@ const BORDER_WIDTH: i32 = 0;
 
 const POS_OFFSETX: i32 = 2;
 const POS_OFFSETY: i32 = 2;
+
+// Vertical offset adjustment for English text to align with Bangla baseline
+const ENGLISH_Y_OFFSET: f32 = -3.0;
+
+/// Check if text is ASCII (English/Latin)
+fn is_ascii_text(text: &str) -> bool {
+    text.chars().all(|c| c.is_ascii())
+}
 
 #[cfg(target_pointer_width = "64")]
 type LongPointer = isize;
@@ -276,7 +284,7 @@ impl CandidateList {
             let mut indice_str = Vec::with_capacity(suggs.len());
             let mut candis_str = Vec::with_capacity(suggs.len());
 
-            let mut candi_height: f32 = 0.0;
+            let mut max_candi_height: f32 = 0.0;
             let mut index_height: f32 = 0.0;
             let mut index_width: f32 = 0.0;
             let mut candi_widths: Vec<f32> = Vec::with_capacity(suggs.len());
@@ -291,13 +299,13 @@ impl CandidateList {
                     indice_str.push(index_str);
 
                     let (w, h) = measure_text_dwrite(factory, sugg, &candi_format);
-                    candi_height = candi_height.max(h);
+                    max_candi_height = max_candi_height.max(h);
                     candi_widths.push(w);
                     candis_str.push(sugg.clone());
                 }
             });
 
-            let row_height = candi_height.max(index_height);
+            let row_height = max_candi_height.max(index_height);
             let label_height = LABEL_PADDING_TOP as f32 + row_height + LABEL_PADDING_BOTTOM as f32;
             
             let mut wnd_height: f32 = 0.0;
@@ -340,9 +348,7 @@ impl CandidateList {
                 label_height,
                 row_height,
                 index_width,
-                index_height,
                 candi_widths,
-                candi_height,
                 candis: candis_str,
                 indice: indice_str,
                 font_size: self.font_size,
@@ -384,9 +390,7 @@ struct PaintArg {
     label_height: f32,
     row_height: f32,
     index_width: f32,
-    index_height: f32,
     candi_widths: Vec<f32>,
-    candi_height: f32,
     indice: Vec<String>,
     candis: Vec<String>,
     font_size: f32,
@@ -556,24 +560,21 @@ fn paint(window: HWND) -> LRESULT {
         let highlighted_brush = highlighted_brush.unwrap();
         let candidate_brush = candidate_brush.unwrap();
 
-        // Calculate vertical centering offset
-        let index_y_offset = (arg.row_height - arg.index_height) / 2.0;
-        let candi_y_offset = (arg.row_height - arg.candi_height) / 2.0;
-
-        // Draw text
+        // Draw text - use row_height for all items and let DirectWrite paragraph alignment handle centering
         let mut index_x = (BORDER_WIDTH + CLIP_WIDTH + LABEL_PADDING_LEFT) as f32;
         let mut candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
         let mut text_y = BORDER_WIDTH as f32 + LABEL_PADDING_TOP as f32;
 
         // Draw highlighted (first) item
+        let candi_y_adjust_0 = if is_ascii_text(&arg.candis[0]) { ENGLISH_Y_OFFSET } else { 0.0 };
         draw_text_with_color_emoji(
             &rt,
             &arg.indice[0],
             &index_format,
             index_x,
-            text_y + index_y_offset,
+            text_y,
             arg.index_width,
-            arg.index_height,
+            arg.row_height,
             &index_brush,
         );
         draw_text_with_color_emoji(
@@ -581,9 +582,9 @@ fn paint(window: HWND) -> LRESULT {
             &arg.candis[0],
             &candi_format,
             candi_x,
-            text_y + candi_y_offset,
+            text_y + candi_y_adjust_0,
             arg.candi_widths[0] + 10.0,
-            arg.candi_height,
+            arg.row_height,
             &highlighted_brush,
         );
 
@@ -600,14 +601,15 @@ fn paint(window: HWND) -> LRESULT {
                 candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
             }
 
+            let candi_y_adjust_i = if is_ascii_text(&arg.candis[i]) { ENGLISH_Y_OFFSET } else { 0.0 };
             draw_text_with_color_emoji(
                 &rt,
                 &arg.indice[i],
                 &index_format,
                 index_x,
-                text_y + index_y_offset,
+                text_y,
                 arg.index_width,
-                arg.index_height,
+                arg.row_height,
                 &index_brush,
             );
             draw_text_with_color_emoji(
@@ -615,9 +617,9 @@ fn paint(window: HWND) -> LRESULT {
                 &arg.candis[i],
                 &candi_format,
                 candi_x,
-                text_y + candi_y_offset,
+                text_y + candi_y_adjust_i,
                 arg.candi_widths[i] + 10.0,
-                arg.candi_height,
+                arg.row_height,
                 &candidate_brush,
             );
         }
