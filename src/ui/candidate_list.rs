@@ -23,7 +23,7 @@ use windows::{
             },
             Dxgi::Common::DXGI_FORMAT_B8G8R8A8_UNORM,
             Gdi::{
-                self, BeginPaint, EndPaint, GetDC, GetDeviceCaps, HDC, InvalidateRect, LOGPIXELSY,
+                BeginPaint, EndPaint, GetDC, GetDeviceCaps, HDC, InvalidateRect, LOGPIXELSY,
                 PAINTSTRUCT, ReleaseDC,
             },
         },
@@ -39,9 +39,9 @@ use windows::{
 };
 
 use crate::{
-    CANDI_INDEX_SUFFIX, CANDI_INDEX_SUFFIX_MONO, CANDI_INDEXES,
+    CANDI_INDEX_SUFFIX, CANDI_INDEXES,
     conf::{self},
-    extend::{ColorExt, OsStrExt2},
+    extend::ColorExt,
     global::{self, CANDI_NUM},
 };
 
@@ -167,7 +167,6 @@ pub struct CandidateList {
     index_suffix: &'static str,
     font_size: f32,
     index_font_size: f32,
-    dpi_scale: f32,
     state: RwLock<HighlightState>,
 }
 
@@ -206,20 +205,13 @@ impl CandidateList {
             let font_size = conf.font.size as f32 * dpi_scale;
             let index_font_size = font_size * 0.7;
 
-            let font_name_lower = conf.font.name.to_ascii_lowercase();
-            let index_suffix =
-                if font_name_lower.contains("mono") || font_name_lower.contains("fairfax") {
-                    CANDI_INDEX_SUFFIX_MONO
-                } else {
-                    CANDI_INDEX_SUFFIX
-                };
+            let index_suffix = CANDI_INDEX_SUFFIX;
             ReleaseDC(window, dc);
             Ok(CandidateList {
                 window,
                 index_suffix,
                 font_size,
                 index_font_size,
-                dpi_scale,
                 state: RwLock::new(HighlightState {
                     highlighted_index: 0,
                     candidate_count: 0,
@@ -440,8 +432,6 @@ impl CandidateList {
             };
 
             let arg = PaintArg {
-                wnd_width,
-                wnd_height,
                 highlight_width,
                 label_height,
                 row_height,
@@ -486,8 +476,6 @@ impl CandidateList {
 }
 
 struct PaintArg {
-    wnd_width: f32,
-    wnd_height: f32,
     highlight_width: f32,
     label_height: f32,
     row_height: f32,
@@ -728,7 +716,7 @@ fn paint(window: HWND) -> LRESULT {
                 &index_format,
                 index_x,
                 text_y,
-                arg.index_width,
+                arg.index_width + 10.0,  // Add horizontal padding
                 arg.row_height,
                 &index_brush,
             );
@@ -775,24 +763,14 @@ unsafe fn draw_text_with_color_emoji(
     };
 
     // D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT enables color emoji rendering
-    rt.DrawText(
-        &text_wide,
-        format,
-        &rect,
-        brush,
-        D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
-        DWRITE_MEASURING_MODE_NATURAL,
-    );
-}
-
-// Keep the old FillRect for any remaining GDI usage if needed
-#[allow(non_snake_case, dead_code)]
-unsafe fn FillRect(hdc: HDC, x: i32, y: i32, width: i32, height: i32, color: &Color) {
-    let rect = RECT {
-        left: x,
-        top: y,
-        right: x + width,
-        bottom: height,
-    };
-    unsafe { Gdi::FillRect(hdc, &rect, color.to_hbrush()) };
+    unsafe {
+        rt.DrawText(
+            &text_wide,
+            format,
+            &rect,
+            brush,
+            D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
+            DWRITE_MEASURING_MODE_NATURAL,
+        );
+    }
 }
