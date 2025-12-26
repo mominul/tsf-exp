@@ -32,7 +32,8 @@ use windows::{
             DestroyWindow, GetClientRect, GetWindowLongPtrA, HICON, HWND_TOPMOST, IDC_ARROW,
             LoadCursorW, RegisterClassExA, SW_HIDE, SW_SHOWNOACTIVATE, SWP_NOACTIVATE, SWP_NOMOVE,
             SWP_NOSIZE, SetWindowLongPtrA, SetWindowPos, ShowWindow, WINDOW_LONG_PTR_INDEX,
-            WM_ERASEBKGND, WM_PAINT, WNDCLASSEXA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
+            WM_ERASEBKGND, WM_PAINT, WNDCLASSEXA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
+            WS_EX_TOPMOST, WS_POPUP,
         },
     },
     core::{PCSTR, Result, s, w},
@@ -311,7 +312,7 @@ impl CandidateList {
     fn repaint(&self, resize: bool) -> Result<()> {
         unsafe {
             let conf = conf::get();
-            
+
             // Copy data out of state and release lock early
             let (highlighted_index, suggs) = {
                 let state = self.state.read().unwrap();
@@ -446,7 +447,7 @@ impl CandidateList {
             };
             let long_ptr = arg.into_long_ptr();
             SetWindowLongPtrA(self.window, WINDOW_LONG_PTR_INDEX::default(), long_ptr);
-            
+
             if resize {
                 SetWindowPos(
                     self.window,
@@ -716,7 +717,7 @@ fn paint(window: HWND) -> LRESULT {
                 &index_format,
                 index_x,
                 text_y,
-                arg.index_width + 10.0,  // Add horizontal padding
+                arg.index_width + 10.0, // Add horizontal padding
                 arg.row_height,
                 &index_brush,
             );

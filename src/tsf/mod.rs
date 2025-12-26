@@ -28,7 +28,7 @@ use windows::{
     core::{AsImpl, Interface, Result, VARIANT, implement},
 };
 
-use crate::{engine::Engine, global::hkl_or_us, ui::candidate_list::CandidateList};
+use crate::{global::IME_KEYBOARD_US, ui::candidate_list::CandidateList};
 
 //----------------------------------------------------------------------------
 //
@@ -55,8 +55,6 @@ pub struct TextService {
     inner: RwLock<TextServiceInner>,
 }
 struct TextServiceInner {
-    // engine
-    engine: Engine,
     riti: RitiContext,
     // Some basic info about the clinet (the program where user is typing)
     tid: u32,
@@ -95,12 +93,11 @@ impl TextService {
         riti_config.set_suggestion_include_english(true);
 
         let inner = TextServiceInner {
-            engine: Engine::build_or_default(),
             riti: RitiContext::new_with_config(&riti_config),
             tid: 0,
             thread_mgr: None,
             context: None,
-            hkl: hkl_or_us(),
+            hkl: IME_KEYBOARD_US,
             char_buf: String::with_capacity(4),
             fresh_ctrl: false,
             disabled_by_ctrl: false,
@@ -177,7 +174,13 @@ impl TextServiceInner {
     }
 
     fn candidate_list(&self) -> Result<&CandidateList> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        log::info!(
+            "[{}:{};{}] {}()",
+            file!(),
+            line!(),
+            column!(),
+            crate::function!()
+        );
 
         self.candidate_list.as_ref().ok_or(E_FAIL.into())
     }
@@ -197,7 +200,13 @@ impl TextServiceInner {
     }
 
     fn assure_candidate_list(&mut self) -> Result<()> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        log::info!(
+            "[{}:{};{}] {}()",
+            file!(),
+            line!(),
+            column!(),
+            crate::function!()
+        );
 
         if self.candidate_list.is_some() {
             Ok(())

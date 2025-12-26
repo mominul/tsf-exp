@@ -1,7 +1,6 @@
 use std::ffi::OsStr;
 
 use log_derive::logfn;
-use strum::IntoEnumIterator;
 use windows::{
     Win32::{
         System::Com::{CLSCTX_INPROC_SERVER, CoCreateInstance},
@@ -12,15 +11,12 @@ use windows::{
     },
     core::GUID,
 };
-use winreg::{
-    RegKey,
-    enums::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE},
-};
+use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 use crate::{
     Result,
-    extend::{GUIDExt, HKLExt, OsStrExt2},
-    global::{self, *},
+    extend::{GUIDExt, OsStrExt2},
+    global::*,
 };
 
 //----------------------------------------------------------------------------
@@ -91,8 +87,8 @@ pub fn register_ime() -> Result<()> {
             CoCreateInstance(&CLSID_TF_InputProcessorProfiles, None, CLSCTX_INPROC_SERVER)?;
         let category_mgr: ITfCategoryMgr =
             CoCreateInstance(&CLSID_TF_CategoryMgr, None, CLSCTX_INPROC_SERVER)?;
-        let hkl = global::hkl_or_us();
-        let langid = hkl.langid();
+        // let hkl = global::hkl_or_us();
+        // let langid = hkl.langid();
         // three things to register:
         // 1. the IME itself
         // 2. language profile
@@ -154,16 +150,16 @@ pub fn unregister_ime() -> Result<()> {
             category_mgr.UnregisterCategory(&IME_ID, &rcatid, &IME_ID)?;
         }
         log::info!("Unregistered the categories.");
-        let langid = global::hkl_or_us().langid();
+        // let langid = global::hkl_or_us().langid();
         input_processor_profiles
-            .RemoveLanguageProfile(&IME_ID, langid, &LANG_PROFILE_ID)
+            .RemoveLanguageProfile(&IME_ID, TEXTSERVICE_LANGID, &LANG_PROFILE_ID)
             .ok();
-        for langid in LanguageID::iter() {
-            let langid = langid as u16;
-            input_processor_profiles
-                .RemoveLanguageProfile(&IME_ID, langid, &LANG_PROFILE_ID)
-                .ok();
-        }
+        // for langid in LanguageID::iter() {
+        //     let langid = langid as u16;
+        //     input_processor_profiles
+        //         .RemoveLanguageProfile(&IME_ID, langid, &LANG_PROFILE_ID)
+        //         .ok();
+        // }
         log::info!("Unregistered the language profile.");
         input_processor_profiles.Unregister(&IME_ID)?;
         log::info!("Unregistered the input method.");

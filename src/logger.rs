@@ -1,4 +1,4 @@
-use std::{env, fs, os::windows::fs::MetadataExt, panic, path::PathBuf};
+use std::{env, fs, panic, path::PathBuf};
 
 use chrono::Local;
 use log::{Level, LevelFilter::*};

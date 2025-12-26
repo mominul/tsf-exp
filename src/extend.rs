@@ -10,10 +10,7 @@ use windows::{
     Win32::{
         Foundation::COLORREF,
         Graphics::Gdi::{CreateSolidBrush, HBRUSH},
-        UI::{
-            Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY},
-            TextServices::HKL,
-        },
+        UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY},
     },
     core::GUID,
 };
@@ -31,15 +28,15 @@ impl<T, E: std::error::Error> ResultExt for std::result::Result<T, E> {
     }
 }
 
-pub trait HKLExt {
-    fn langid(self) -> u16;
-}
+// pub trait HKLExt {
+//     fn langid(self) -> u16;
+// }
 
-impl HKLExt for HKL {
-    fn langid(self) -> u16 {
-        (self.0 & 0xFFFF) as u16
-    }
-}
+// impl HKLExt for HKL {
+//     fn langid(self) -> u16 {
+//         (self.0 & 0xFFFF) as u16
+//     }
+// }
 
 pub trait GUIDExt {
     fn to_rfc4122(&self) -> String;

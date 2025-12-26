@@ -383,12 +383,12 @@ impl TextServiceInner {
                     if let Ok(candidate_list) = self.candidate_list() {
                         candidate_list.move_highlight_prev();
                     }
-                },
+                }
                 Tab | Right => {
                     if let Ok(candidate_list) = self.candidate_list() {
                         candidate_list.move_highlight_next();
                     }
-                },
+                }
                 _ => {
                     return Ok(FALSE);
                 }
@@ -425,7 +425,7 @@ impl TextServiceInner {
         if self.composition.is_none() {
             match shortcut {
                 NextSchema => {
-                    self.engine.next_schema();
+                    // self.engine.next_schema();
                     Ok(TRUE)
                 }
                 _ => Ok(FALSE),
