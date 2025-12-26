@@ -56,6 +56,7 @@ const LABEL_PADDING_TOP: i32 = 4;
 const LABEL_PADDING_BOTTOM: i32 = 4;
 const LABEL_PADDING_LEFT: i32 = 5;
 const LABEL_PADDING_RIGHT: i32 = 6;
+const INDEX_CANDI_GAP: i32 = 6;
 const BORDER_WIDTH: i32 = 0;
 
 const POS_OFFSETX: i32 = 2;
@@ -309,6 +310,7 @@ impl CandidateList {
                 wnd_width += CLIP_WIDTH as f32
                     + LABEL_PADDING_LEFT as f32
                     + index_width
+                    + INDEX_CANDI_GAP as f32
                     + max_candi_width
                     + LABEL_PADDING_RIGHT as f32;
                 wnd_width = wnd_width.max(wnd_height * 4.0 / 5.0);
@@ -318,6 +320,7 @@ impl CandidateList {
                 for candi_width in candi_widths.iter() {
                     wnd_width += LABEL_PADDING_LEFT as f32 + LABEL_PADDING_RIGHT as f32;
                     wnd_width += index_width;
+                    wnd_width += INDEX_CANDI_GAP as f32;
                     wnd_width += candi_width;
                 }
             }
@@ -327,7 +330,7 @@ impl CandidateList {
             let highlight_width = if conf.layout.vertical {
                 wnd_width - CLIP_WIDTH as f32 - (BORDER_WIDTH * 2) as f32
             } else {
-                LABEL_PADDING_LEFT as f32 + index_width + candi_widths[0] + LABEL_PADDING_RIGHT as f32
+                LABEL_PADDING_LEFT as f32 + index_width + INDEX_CANDI_GAP as f32 + candi_widths[0] + LABEL_PADDING_RIGHT as f32
             };
 
             let arg = PaintArg {
@@ -559,7 +562,7 @@ fn paint(window: HWND) -> LRESULT {
 
         // Draw text
         let mut index_x = (BORDER_WIDTH + CLIP_WIDTH + LABEL_PADDING_LEFT) as f32;
-        let mut candi_x = index_x + arg.index_width;
+        let mut candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
         let mut text_y = BORDER_WIDTH as f32 + LABEL_PADDING_TOP as f32;
 
         // Draw highlighted (first) item
@@ -590,10 +593,11 @@ fn paint(window: HWND) -> LRESULT {
                 text_y += arg.label_height;
             } else {
                 index_x += arg.index_width
+                    + INDEX_CANDI_GAP as f32
                     + arg.candi_widths[i - 1]
                     + LABEL_PADDING_LEFT as f32
                     + LABEL_PADDING_RIGHT as f32;
-                candi_x = index_x + arg.index_width;
+                candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
             }
 
             draw_text_with_color_emoji(

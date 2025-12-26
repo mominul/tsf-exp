@@ -96,6 +96,7 @@ impl TextService {
         riti_config.set_layout_file_path("avro_phonetic");
         riti_config.set_database_dir("");
         riti_config.set_phonetic_suggestion(true);
+        riti_config.set_suggestion_include_english(true);
         
             let inner = TextServiceInner {
                 engine: Engine::build_or_default(),
