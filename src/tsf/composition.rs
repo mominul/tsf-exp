@@ -168,11 +168,19 @@ impl TextServiceInner {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         self.riti.candidate_committed(0);
-        if self.suggestions.as_ref().unwrap().is_empty() {
-            self.force_release(' ')
-        } else {
-            self.select(0)
+        let mut selected = 0;
+
+        if let Ok(candidate_list) = self.candidate_list() {
+            selected = candidate_list.get_highlighted_index();
         }
+
+        // if self.suggestions.as_ref().unwrap().is_empty() {
+        //     self.force_release(' ')
+        // } else {
+        //     self.select(0)
+        // }
+
+        self.select(selected)
     }
 
     /// Commit the 1st suggestion and release the unrecognizable trailing characters.

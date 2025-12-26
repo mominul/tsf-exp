@@ -177,7 +177,7 @@ impl TextServiceInner {
     }
 
     fn candidate_list(&self) -> Result<&CandidateList> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         self.candidate_list.as_ref().ok_or(E_FAIL.into())
     }
@@ -197,7 +197,7 @@ impl TextServiceInner {
     }
 
     fn assure_candidate_list(&mut self) -> Result<()> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         if self.candidate_list.is_some() {
             Ok(())

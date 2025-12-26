@@ -1,4 +1,5 @@
 use std::mem::{ManuallyDrop, size_of};
+use std::sync::RwLock;
 
 use csscolorparser::Color;
 use log::{debug, error, trace};
@@ -31,7 +32,7 @@ use windows::{
             DestroyWindow, GetClientRect, GetWindowLongPtrA, HICON, HWND_TOPMOST, IDC_ARROW,
             LoadCursorW, RegisterClassExA, SW_HIDE, SW_SHOWNOACTIVATE, SWP_NOACTIVATE, SWP_NOMOVE,
             SWP_NOSIZE, SetWindowLongPtrA, SetWindowPos, ShowWindow, WINDOW_LONG_PTR_INDEX,
-            WM_PAINT, WNDCLASSEXA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
+            WM_ERASEBKGND, WM_PAINT, WNDCLASSEXA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
         },
     },
     core::{PCSTR, Result, s, w},
@@ -114,6 +115,7 @@ unsafe extern "system" fn wind_proc(
     lparam: LPARAM,
 ) -> LRESULT {
     match msg {
+        WM_ERASEBKGND => LRESULT(1), // Prevent background erase to avoid flickering
         WM_PAINT => paint(window),
         _ => unsafe { DefWindowProcA(window, msg, wparam, lparam) },
     }
@@ -153,13 +155,20 @@ fn measure_text_dwrite(
 //
 //----------------------------------------------------------------------------
 
-#[derive(Default)]
+/// Interior mutable state for highlight tracking
+struct HighlightState {
+    highlighted_index: usize,
+    candidate_count: usize,
+    candidates: Vec<String>,
+}
+
 pub struct CandidateList {
     window: HWND,
     index_suffix: &'static str,
     font_size: f32,
     index_font_size: f32,
     dpi_scale: f32,
+    state: RwLock<HighlightState>,
 }
 
 impl CandidateList {
@@ -211,6 +220,11 @@ impl CandidateList {
                 font_size,
                 index_font_size,
                 dpi_scale,
+                state: RwLock::new(HighlightState {
+                    highlighted_index: 0,
+                    candidate_count: 0,
+                    candidates: Vec::new(),
+                }),
             })
         }
     }
@@ -231,9 +245,89 @@ impl CandidateList {
         Ok(())
     }
 
+    /// Move the highlight to the next candidate (right/down), wrapping around to the first.
+    pub fn move_highlight_next(&self) {
+        let mut state = self.state.write().unwrap();
+        if state.candidate_count == 0 {
+            return;
+        }
+        state.highlighted_index = (state.highlighted_index + 1) % state.candidate_count;
+        drop(state);
+        self.invalidate();
+    }
+
+    /// Move the highlight to the previous candidate (left/up), wrapping around to the last.
+    pub fn move_highlight_prev(&self) {
+        let mut state = self.state.write().unwrap();
+        if state.candidate_count == 0 {
+            return;
+        }
+        if state.highlighted_index == 0 {
+            state.highlighted_index = state.candidate_count - 1;
+        } else {
+            state.highlighted_index -= 1;
+        }
+        drop(state);
+        self.invalidate();
+    }
+
+    /// Set the highlight to a specific index. Returns false if index is out of bounds.
+    pub fn set_highlight(&self, index: usize) -> bool {
+        let mut state = self.state.write().unwrap();
+        if index >= state.candidate_count {
+            return false;
+        }
+        state.highlighted_index = index;
+        drop(state);
+        self.invalidate();
+        true
+    }
+
+    /// Get the currently highlighted index.
+    pub fn get_highlighted_index(&self) -> usize {
+        self.state.read().unwrap().highlighted_index
+    }
+
+    /// Get the total number of candidates currently displayed.
+    pub fn get_candidate_count(&self) -> usize {
+        self.state.read().unwrap().candidate_count
+    }
+
+    /// Reset highlight to the first candidate.
+    pub fn reset_highlight(&self) {
+        self.state.write().unwrap().highlighted_index = 0;
+    }
+
+    /// Trigger a repaint of the window with updated highlight.
+    fn invalidate(&self) {
+        let _ = self.repaint(false);
+    }
+
     pub fn show(&self, suggs: &[String]) -> Result<()> {
+        // Reset highlight to first candidate and store candidates
+        {
+            let mut state = self.state.write().unwrap();
+            state.highlighted_index = 0;
+            state.candidate_count = suggs.len().min(CANDI_NUM);
+            state.candidates = suggs.iter().take(CANDI_NUM).cloned().collect();
+        }
+
+        self.repaint(true)
+    }
+
+    /// Internal method to rebuild PaintArg and trigger repaint
+    fn repaint(&self, resize: bool) -> Result<()> {
         unsafe {
             let conf = conf::get();
+            
+            // Copy data out of state and release lock early
+            let (highlighted_index, suggs) = {
+                let state = self.state.read().unwrap();
+                if state.candidates.is_empty() {
+                    return Ok(());
+                }
+                (state.highlighted_index, state.candidates.clone())
+            };
 
             // Create DirectWrite text formats for measurement
             let (candi_format, index_format) = DW_FACTORY.with(|factory| {
@@ -334,13 +428,14 @@ impl CandidateList {
             wnd_height += (BORDER_WIDTH * 2) as f32;
             wnd_width += (BORDER_WIDTH * 2) as f32;
 
+            // Calculate highlight width based on the highlighted candidate
             let highlight_width = if conf.layout.vertical {
                 wnd_width - CLIP_WIDTH as f32 - (BORDER_WIDTH * 2) as f32
             } else {
                 LABEL_PADDING_LEFT as f32
                     + index_width
                     + INDEX_CANDI_GAP as f32
-                    + candi_widths[0]
+                    + candi_widths[highlighted_index]
                     + LABEL_PADDING_RIGHT as f32
             };
 
@@ -357,20 +452,24 @@ impl CandidateList {
                 font_size: self.font_size,
                 index_font_size: self.index_font_size,
                 font_name: conf.font.name.clone(),
+                highlighted_index,
             };
             let long_ptr = arg.into_long_ptr();
             SetWindowLongPtrA(self.window, WINDOW_LONG_PTR_INDEX::default(), long_ptr);
-            SetWindowPos(
-                self.window,
-                HWND_TOPMOST,
-                0,
-                0,
-                wnd_width.ceil() as i32,
-                wnd_height.ceil() as i32,
-                SWP_NOACTIVATE | SWP_NOMOVE,
-            )?;
-            ShowWindow(self.window, SW_SHOWNOACTIVATE);
-            InvalidateRect(self.window, None, BOOL::from(true));
+            
+            if resize {
+                SetWindowPos(
+                    self.window,
+                    HWND_TOPMOST,
+                    0,
+                    0,
+                    wnd_width.ceil() as i32,
+                    wnd_height.ceil() as i32,
+                    SWP_NOACTIVATE | SWP_NOMOVE,
+                )?;
+                ShowWindow(self.window, SW_SHOWNOACTIVATE);
+            }
+            InvalidateRect(self.window, None, BOOL::from(false));
         };
         Ok(())
     }
@@ -399,6 +498,7 @@ struct PaintArg {
     font_size: f32,
     index_font_size: f32,
     font_name: String,
+    highlighted_index: usize,
 }
 
 impl PaintArg {
@@ -513,14 +613,40 @@ fn paint(window: HWND) -> LRESULT {
         // Clear with background color
         rt.Clear(Some(&color_to_d2d(&conf.color.background)));
 
-        // Draw clip
+        // Calculate highlight position based on highlighted_index
+        let highlight_x: f32;
+        let highlight_y: f32;
+
+        if conf.layout.vertical {
+            highlight_x = (BORDER_WIDTH + CLIP_WIDTH) as f32;
+            highlight_y = BORDER_WIDTH as f32 + (arg.highlighted_index as f32 * arg.label_height);
+        } else {
+            // Calculate x position by summing widths of previous candidates
+            let mut x = (BORDER_WIDTH + CLIP_WIDTH) as f32;
+            for i in 0..arg.highlighted_index {
+                x += LABEL_PADDING_LEFT as f32
+                    + arg.index_width
+                    + INDEX_CANDI_GAP as f32
+                    + arg.candi_widths[i]
+                    + LABEL_PADDING_RIGHT as f32;
+            }
+            highlight_x = x;
+            highlight_y = BORDER_WIDTH as f32;
+        }
+
+        // Draw clip (always at top-left, next to highlighted item in vertical mode)
         if let Ok(clip_brush) = rt.CreateSolidColorBrush(&color_to_d2d(&conf.color.clip), None) {
+            let clip_y = if conf.layout.vertical {
+                highlight_y
+            } else {
+                BORDER_WIDTH as f32
+            };
             rt.FillRectangle(
                 &D2D_RECT_F {
                     left: BORDER_WIDTH as f32,
-                    top: BORDER_WIDTH as f32,
+                    top: clip_y,
                     right: (BORDER_WIDTH + CLIP_WIDTH) as f32,
-                    bottom: BORDER_WIDTH as f32 + arg.label_height,
+                    bottom: clip_y + arg.label_height,
                 },
                 &clip_brush,
             );
@@ -532,10 +658,10 @@ fn paint(window: HWND) -> LRESULT {
         {
             rt.FillRectangle(
                 &D2D_RECT_F {
-                    left: (BORDER_WIDTH + CLIP_WIDTH) as f32,
-                    top: BORDER_WIDTH as f32,
-                    right: (BORDER_WIDTH + CLIP_WIDTH) as f32 + arg.highlight_width,
-                    bottom: BORDER_WIDTH as f32 + arg.label_height,
+                    left: highlight_x,
+                    top: highlight_y,
+                    right: highlight_x + arg.highlight_width,
+                    bottom: highlight_y + arg.label_height,
                 },
                 &highlight_brush,
             );
@@ -568,51 +694,34 @@ fn paint(window: HWND) -> LRESULT {
         let mut candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
         let mut text_y = BORDER_WIDTH as f32 + LABEL_PADDING_TOP as f32;
 
-        // Draw highlighted (first) item
-        let candi_y_adjust_0 = if is_ascii_text(&arg.candis[0]) {
-            ENGLISH_Y_OFFSET
-        } else {
-            0.0
-        };
-        draw_text_with_color_emoji(
-            &rt,
-            &arg.indice[0],
-            &index_format,
-            index_x,
-            text_y,
-            arg.index_width,
-            arg.row_height,
-            &index_brush,
-        );
-        draw_text_with_color_emoji(
-            &rt,
-            &arg.candis[0],
-            &candi_format,
-            candi_x,
-            text_y + candi_y_adjust_0,
-            arg.candi_widths[0] + 10.0,
-            arg.row_height,
-            &highlighted_brush,
-        );
-
-        // Draw remaining items
-        for i in 1..arg.candis.len() {
-            if conf.layout.vertical {
-                text_y += arg.label_height;
-            } else {
-                index_x += arg.index_width
-                    + INDEX_CANDI_GAP as f32
-                    + arg.candi_widths[i - 1]
-                    + LABEL_PADDING_LEFT as f32
-                    + LABEL_PADDING_RIGHT as f32;
-                candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
+        // Draw all items, using highlighted color for the selected one
+        for i in 0..arg.candis.len() {
+            if i > 0 {
+                if conf.layout.vertical {
+                    text_y += arg.label_height;
+                } else {
+                    index_x += arg.index_width
+                        + INDEX_CANDI_GAP as f32
+                        + arg.candi_widths[i - 1]
+                        + LABEL_PADDING_LEFT as f32
+                        + LABEL_PADDING_RIGHT as f32;
+                    candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
+                }
             }
 
-            let candi_y_adjust_i = if is_ascii_text(&arg.candis[i]) {
+            let candi_y_adjust = if is_ascii_text(&arg.candis[i]) {
                 ENGLISH_Y_OFFSET
             } else {
                 0.0
             };
+
+            // Use highlighted brush for the selected candidate, candidate brush for others
+            let text_brush = if i == arg.highlighted_index {
+                &highlighted_brush
+            } else {
+                &candidate_brush
+            };
+
             draw_text_with_color_emoji(
                 &rt,
                 &arg.indice[i],
@@ -628,10 +737,10 @@ fn paint(window: HWND) -> LRESULT {
                 &arg.candis[i],
                 &candi_format,
                 candi_x,
-                text_y + candi_y_adjust_i,
+                text_y + candi_y_adjust,
                 arg.candi_widths[i] + 10.0,
                 arg.row_height,
-                &candidate_brush,
+                text_brush,
             );
         }
 

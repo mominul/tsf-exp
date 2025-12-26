@@ -378,7 +378,17 @@ impl TextServiceInner {
                 //     self.release()?
                 // }
                 // disable cursor movement because I am lazy.
-                Left | Up | Right | Down => (),
+                // Left | Up | Right | Down => (),
+                Left => {
+                    self.assure_candidate_list()?;
+                    let candidate_list = self.candidate_list()?;
+                    candidate_list.move_highlight_prev();
+                },
+                Right => {
+                    self.assure_candidate_list()?;
+                    let candidate_list = self.candidate_list()?;
+                    candidate_list.move_highlight_next();
+                },
                 _ => {
                     return Ok(FALSE);
                 }
