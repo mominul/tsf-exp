@@ -7,7 +7,8 @@ fn main() -> io::Result<()> {
         return Ok(());
     }
     WindowsResource::new()
-        .set_icon_with_id("res/tray_lite.ico", "0")
-        .set_icon_with_id("res/tray_dark.ico", "1")
+        // .set_icon_with_id("res/tray_lite.ico", "0")
+        // .set_icon_with_id("res/tray_dark.ico", "1")
+        .set_icon_with_id("res/openbangla.ico", "0")
         .compile()
 }

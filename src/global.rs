@@ -70,21 +70,21 @@ pub fn hkl_or_us() -> HKL {
 }
 
 // registration stuff
-pub const IME_NAME: &str = "Ajemi";
-pub const IME_NAME_ASCII: &str = "Ajemi";
-pub const IME_ID: GUID = GUID::from_u128(0xC93D3D59_2FAC_40E0_ABC6_A3658749E2FA);
-pub const LANG_PROFILE_ID: GUID = GUID::from_u128(0xA411A7FC_A082_4B8A_8741_AA4A72613933);
-pub const LANGBAR_ITEM_ID: GUID = GUID::from_u128(0x95288B2B_4D3B_4D4A_BF5B_9342E4F75E4D);
-pub const DISPLAY_ATTR_ID: GUID = GUID::from_u128(0xE42647FB_4BF0_4570_9013_768487C5CAAE);
+pub const IME_NAME: &str = "OpenBangla";
+pub const IME_NAME_ASCII: &str = "OpenBangla";
+pub const IME_ID: GUID = GUID::from_u128(0x9AC475F8_4229_47F5_A08A_8A68D3AB1318);//C93D3D59_2FAC_40E0_ABC6_A3658749E2FA);
+pub const LANG_PROFILE_ID: GUID = GUID::from_u128(0x77598B34_42C3_4EBC_A0F8_7A7769CA44CD);//A411A7FC_A082_4B8A_8741_AA4A72613933);
+pub const LANGBAR_ITEM_ID: GUID = GUID::from_u128(0x997E9F8B_BB33_43DA_9FB2_5271BAD7C556);//95288B2B_4D3B_4D4A_BF5B_9342E4F75E4D);
+pub const DISPLAY_ATTR_ID: GUID = GUID::from_u128(0xB0ADCBF2_E221_4CF0_AFED_7C3F7C7AD328);//E42647FB_4BF0_4570_9013_768487C5CAAE);
 pub const TEXTSERVICE_LANGID: u16 = (SUBLANG_BANGLA_BANGLADESH << 10 | LANG_BANGLA) as u16;
-pub const LITE_TRAY_ICON_INDEX: u32 = 0;
-pub const DARK_TRAY_ICON_INDEX: u32 = 1;
+// pub const LITE_TRAY_ICON_INDEX: u32 = 0;
+// pub const DARK_TRAY_ICON_INDEX: u32 = 1;
+pub const ICON_INDEX: u32 = 0;
 // customization
 pub const CANDI_NUM: usize = 9;
 pub const CANDI_INDEXES: [&str; CANDI_NUM] = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 pub const CANDI_INDEX_SUFFIX: &str = ". ";
 pub const CANDI_INDEX_SUFFIX_MONO: &str = ".";
-pub const PREEDIT_DELIMITER: &str = "'";
 // included text
 pub const DEFAULT_CONF: &str = include_str!("../res/conf.toml");
 pub const SITELEN_DICT: &str = include_str!("../res/dict/sitelen.dict");

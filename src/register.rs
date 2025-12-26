@@ -101,20 +101,21 @@ pub fn register_ime() -> Result<()> {
         log::info!("Registered the input method.");
         let ime_name: Vec<u16> = OsStr::new(IME_NAME).to_null_terminated_wchars();
         let icon_file: Vec<u16> = dll_path()?.to_null_terminated_wchars();
-        let icon_index = {
-            let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-            let path = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
-            hkcu.open_subkey(path)
-                .and_then(|subkey| subkey.get_value("SystemUsesLightTheme"))
-                .map(|light_theme: u32| {
-                    if light_theme == 1 {
-                        LITE_TRAY_ICON_INDEX
-                    } else {
-                        DARK_TRAY_ICON_INDEX
-                    }
-                })
-                .unwrap_or(LITE_TRAY_ICON_INDEX)
-        };
+        // let icon_index = {
+        //     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        //     let path = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
+        //     hkcu.open_subkey(path)
+        //         .and_then(|subkey| subkey.get_value("SystemUsesLightTheme"))
+        //         .map(|light_theme: u32| {
+        //             if light_theme == 1 {
+        //                 LITE_TRAY_ICON_INDEX
+        //             } else {
+        //                 DARK_TRAY_ICON_INDEX
+        //             }
+        //         })
+        //         .unwrap_or(LITE_TRAY_ICON_INDEX)
+        // };
+        let icon_index = ICON_INDEX;
         input_processor_profiles.AddLanguageProfile(
             &IME_ID,
             TEXTSERVICE_LANGID,
