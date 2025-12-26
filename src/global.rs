@@ -5,7 +5,10 @@ use strum::EnumIter;
 use windows::{
     Win32::{
         Foundation::{GetLastError, HINSTANCE},
-        System::{LibraryLoader::GetModuleFileNameA, SystemServices::{LANG_BANGLA, SUBLANG_BANGLA_BANGLADESH}},
+        System::{
+            LibraryLoader::GetModuleFileNameA,
+            SystemServices::{LANG_BANGLA, SUBLANG_BANGLA_BANGLADESH},
+        },
         UI::TextServices::HKL,
     },
     core::GUID,
@@ -14,60 +17,56 @@ use windows::{
 use crate::{Error, Result, extend::ResultExt};
 
 pub fn setup(dll_module: HINSTANCE) {
-        DLL_MODULE.get_or_init(|| dll_module);
-    
+    DLL_MODULE.get_or_init(|| dll_module);
 }
 
 // global variables
 static DLL_MODULE: OnceLock<HINSTANCE> = OnceLock::new();
 pub fn dll_module() -> HINSTANCE {
-        DLL_MODULE.get().copied().unwrap()
-    
+    DLL_MODULE.get().copied().unwrap()
 }
 
 pub fn dll_path() -> Result<OsString> {
-        let mut buf: Vec<u8> = vec![0; 512];
-        unsafe { GetModuleFileNameA(dll_module(), &mut buf) };
-        if buf[0] == 0 {
-            let err = unsafe { GetLastError() };
-            error!("Failed to find the dll path. {:?}", err);
-            return Err(err.into());
+    let mut buf: Vec<u8> = vec![0; 512];
+    unsafe { GetModuleFileNameA(dll_module(), &mut buf) };
+    if buf[0] == 0 {
+        let err = unsafe { GetLastError() };
+        error!("Failed to find the dll path. {:?}", err);
+        return Err(err.into());
+    }
+    let mut from = 0;
+    let mut to = buf.len();
+    while to != from + 1 {
+        let i = (to + from) / 2;
+        if buf[i] == 0 {
+            to = i;
+        } else {
+            from = i;
         }
-        let mut from = 0;
-        let mut to = buf.len();
-        while to != from + 1 {
-            let i = (to + from) / 2;
-            if buf[i] == 0 {
-                to = i;
-            } else {
-                from = i;
-            }
-        }
-        buf.truncate(to);
-        let path = unsafe { OsString::from_encoded_bytes_unchecked(buf) };
-        debug!("Found DLL in {}", path.to_string_lossy());
-        Ok(path)
-    
+    }
+    buf.truncate(to);
+    let path = unsafe { OsString::from_encoded_bytes_unchecked(buf) };
+    debug!("Found DLL in {}", path.to_string_lossy());
+    Ok(path)
 }
 
 pub fn hkl_or_us() -> HKL {
     //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-    
-        static INSTANCE: OnceLock<HKL> = OnceLock::new();
-        *INSTANCE.get_or_init(|| {
-            // I need try block
-            let result: Result<HKL> = (|| {
-                let hkl = PathBuf::from(env::var("LOCALAPPDATA")?)
-                    .join(IME_NAME)
-                    .join("install.dat");
-                let hkl = fs::read_to_string(hkl)?;
-                let hkl = u32::from_str_radix(&hkl, 16).map_err(Error::InstallDatCorrupted)?;
-                let hkl = HKL(hkl as isize);
-                Ok(hkl)
-            })();
-            result.log_err().unwrap_or(HKL(LanguageID::US as isize))
-        })
-    
+
+    static INSTANCE: OnceLock<HKL> = OnceLock::new();
+    *INSTANCE.get_or_init(|| {
+        // I need try block
+        let result: Result<HKL> = (|| {
+            let hkl = PathBuf::from(env::var("LOCALAPPDATA")?)
+                .join(IME_NAME)
+                .join("install.dat");
+            let hkl = fs::read_to_string(hkl)?;
+            let hkl = u32::from_str_radix(&hkl, 16).map_err(Error::InstallDatCorrupted)?;
+            let hkl = HKL(hkl as isize);
+            Ok(hkl)
+        })();
+        result.log_err().unwrap_or(HKL(LanguageID::US as isize))
+    })
 }
 
 // registration stuff

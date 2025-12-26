@@ -1,6 +1,10 @@
 use riti::keycodes::*;
 use windows::Win32::Foundation::WPARAM;
-use windows::Win32::UI::Input::KeyboardAndMouse::{VIRTUAL_KEY, VK_ADD, VK_DECIMAL, VK_DIVIDE, VK_MULTIPLY, VK_NUMPAD0, VK_NUMPAD1, VK_NUMPAD2, VK_NUMPAD3, VK_NUMPAD4, VK_NUMPAD5, VK_NUMPAD6, VK_NUMPAD7, VK_NUMPAD8, VK_NUMPAD9, VK_SUBTRACT};
+use windows::Win32::UI::Input::KeyboardAndMouse::{
+    VIRTUAL_KEY, VK_ADD, VK_DECIMAL, VK_DIVIDE, VK_MULTIPLY, VK_NUMPAD0, VK_NUMPAD1, VK_NUMPAD2,
+    VK_NUMPAD3, VK_NUMPAD4, VK_NUMPAD5, VK_NUMPAD6, VK_NUMPAD7, VK_NUMPAD8, VK_NUMPAD9,
+    VK_SUBTRACT,
+};
 
 pub fn to_keycode(ch: char, keycode: u32) -> u16 {
     let vk: VIRTUAL_KEY = VIRTUAL_KEY(keycode as u16);

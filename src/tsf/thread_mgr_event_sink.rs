@@ -9,15 +9,13 @@ use super::TextService;
 impl ITfThreadMgrEventSink_Impl for TextService {
     fn OnInitDocumentMgr(&self, pdim: Option<&ITfDocumentMgr>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            Ok(())
-        
+
+        Ok(())
     }
     fn OnUninitDocumentMgr(&self, pdim: Option<&ITfDocumentMgr>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            Ok(())
-        
+
+        Ok(())
     }
     fn OnSetFocus(
         &self,
@@ -25,20 +23,17 @@ impl ITfThreadMgrEventSink_Impl for TextService {
         prevfocus: Option<&ITfDocumentMgr>,
     ) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            self.write()?.abort()
-        
+
+        self.write()?.abort()
     }
     fn OnPushContext(&self, pic: Option<&ITfContext>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            Ok(())
-        
+
+        Ok(())
     }
     fn OnPopContext(&self, pic: Option<&ITfContext>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            Ok(())
-        
+
+        Ok(())
     }
 }

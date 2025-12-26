@@ -2,10 +2,10 @@ mod composition;
 pub mod display_attribute_provider;
 mod edit_session;
 mod key_event_sink;
+pub mod keycode;
 mod langbar_item;
 pub mod text_input_processor;
 mod thread_mgr_event_sink;
-pub mod keycode;
 
 use std::time::{Duration, Instant};
 
@@ -28,11 +28,7 @@ use windows::{
     core::{AsImpl, Interface, Result, VARIANT, implement},
 };
 
-use crate::{
-    engine::{Engine},
-    global::hkl_or_us,
-    ui::candidate_list::CandidateList,
-};
+use crate::{engine::Engine, global::hkl_or_us, ui::candidate_list::CandidateList};
 
 //----------------------------------------------------------------------------
 //
@@ -97,127 +93,118 @@ impl TextService {
         riti_config.set_database_dir("");
         riti_config.set_phonetic_suggestion(true);
         riti_config.set_suggestion_include_english(true);
-        
-            let inner = TextServiceInner {
-                engine: Engine::build_or_default(),
-                riti: RitiContext::new_with_config(&riti_config),
-                tid: 0,
-                thread_mgr: None,
-                context: None,
-                hkl: hkl_or_us(),
-                char_buf: String::with_capacity(4),
-                fresh_ctrl: false,
-                disabled_by_ctrl: false,
-                cookie: None,
-                composition: None,
-                spelling: String::with_capacity(32),
-                suggestions: None,
-                selected: String::with_capacity(32),
-                preedit: String::with_capacity(32),
-                icon: HICON::default(),
-                candidate_list: None,
-                display_attribute: None,
-                interface: None,
-            };
-            let text_service = TextService {
-                inner: RwLock::new(inner),
-            };
-            // from takes ownership of the object and returns a smart pointer
-            let interface = ITfTextInputProcessor::from(text_service);
-            // inject the smart pointer back to the object
-            let text_service: &TextService = unsafe { interface.as_impl() };
-            text_service.write()?.interface = Some(interface.clone());
-            // cast the interface to desired type
-            interface.cast()
-        
+
+        let inner = TextServiceInner {
+            engine: Engine::build_or_default(),
+            riti: RitiContext::new_with_config(&riti_config),
+            tid: 0,
+            thread_mgr: None,
+            context: None,
+            hkl: hkl_or_us(),
+            char_buf: String::with_capacity(4),
+            fresh_ctrl: false,
+            disabled_by_ctrl: false,
+            cookie: None,
+            composition: None,
+            spelling: String::with_capacity(32),
+            suggestions: None,
+            selected: String::with_capacity(32),
+            preedit: String::with_capacity(32),
+            icon: HICON::default(),
+            candidate_list: None,
+            display_attribute: None,
+            interface: None,
+        };
+        let text_service = TextService {
+            inner: RwLock::new(inner),
+        };
+        // from takes ownership of the object and returns a smart pointer
+        let interface = ITfTextInputProcessor::from(text_service);
+        // inject the smart pointer back to the object
+        let text_service: &TextService = unsafe { interface.as_impl() };
+        text_service.write()?.interface = Some(interface.clone());
+        // cast the interface to desired type
+        interface.cast()
     }
 
     fn write(&self) -> Result<RwLockWriteGuard<'_, TextServiceInner>> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            self.inner
-                .try_write()
-                .or_else(|| {
-                    warn!("RwLock::try_write returned None.");
-                    let timeout = Instant::now() + Duration::from_millis(50);
-                    self.inner.try_write_until(timeout)
-                })
-                .ok_or_else(|| {
-                    error!("Failed to obtain write lock.");
-                    E_FAIL.into()
-                })
-        
+
+        self.inner
+            .try_write()
+            .or_else(|| {
+                warn!("RwLock::try_write returned None.");
+                let timeout = Instant::now() + Duration::from_millis(50);
+                self.inner.try_write_until(timeout)
+            })
+            .ok_or_else(|| {
+                error!("Failed to obtain write lock.");
+                E_FAIL.into()
+            })
     }
 
     fn try_write(&self) -> Result<RwLockWriteGuard<'_, TextServiceInner>> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            self.inner.try_write().ok_or_else(|| E_FAIL.into())
-        
+
+        self.inner.try_write().ok_or_else(|| E_FAIL.into())
     }
 }
 
 impl TextServiceInner {
     fn interface<I: Interface>(&self) -> Result<I> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            // guarenteed to be Some by TextService::create
-            self.interface.as_ref().unwrap().cast()
-        
+
+        // guarenteed to be Some by TextService::create
+        self.interface.as_ref().unwrap().cast()
     }
 
     fn thread_mgr(&self) -> Result<&ITfThreadMgr> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            self.thread_mgr.as_ref().ok_or_else(|| {
-                error!("Thread manager is None.");
-                E_FAIL.into()
-            })
-        
+
+        self.thread_mgr.as_ref().ok_or_else(|| {
+            error!("Thread manager is None.");
+            E_FAIL.into()
+        })
     }
 
     fn context(&self) -> Result<&ITfContext> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            self.context.as_ref().ok_or_else(|| {
-                error!("Context is None.");
-                E_FAIL.into()
-            })
-        
+
+        self.context.as_ref().ok_or_else(|| {
+            error!("Context is None.");
+            E_FAIL.into()
+        })
     }
 
     fn candidate_list(&self) -> Result<&CandidateList> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            self.candidate_list.as_ref().ok_or(E_FAIL.into())
-        
+
+        self.candidate_list.as_ref().ok_or(E_FAIL.into())
     }
 
     fn create_candidate_list(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            let parent_window = unsafe {
-                self.thread_mgr()?
-                    .GetFocus()?
-                    .GetTop()?
-                    .GetActiveView()?
-                    .GetWnd()?
-            };
-            self.candidate_list = Some(CandidateList::create(parent_window)?);
-            Ok(())
-        
+
+        let parent_window = unsafe {
+            self.thread_mgr()?
+                .GetFocus()?
+                .GetTop()?
+                .GetActiveView()?
+                .GetWnd()?
+        };
+        self.candidate_list = Some(CandidateList::create(parent_window)?);
+        Ok(())
     }
 
     fn assure_candidate_list(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            if self.candidate_list.is_some() {
-                Ok(())
-            } else {
-                debug!("Previous creation of candidate list failed. Recreating now.");
-                self.create_candidate_list()
-            }
-        
+
+        if self.candidate_list.is_some() {
+            Ok(())
+        } else {
+            debug!("Previous creation of candidate list failed. Recreating now.");
+            self.create_candidate_list()
+        }
     }
 }
 

@@ -20,7 +20,8 @@ use windows::{
 use super::{TextService, TextServiceInner, edit_session};
 use crate::{
     conf::{self, Toggle},
-    extend::{CharExt, GUIDExt, OsStrExt2, VKExt}, tsf::keycode::to_keycode,
+    extend::{CharExt, GUIDExt, OsStrExt2, VKExt},
+    tsf::keycode::to_keycode,
 };
 //----------------------------------------------------------------------------
 //
@@ -51,31 +52,30 @@ impl ITfKeyEventSink_Impl for TextService {
         lparam: LPARAM,
     ) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("OnTestKeyDown({:#04X})", wparam.0);
-            let mut inner = self.write()?;
-            // track ctrl
-            inner.fresh_ctrl = is_ctrl(wparam);
-            // detect shortcut
-            if let Some(shortcut) = Shortcut::try_from(wparam.0) {
-                return inner.test_shortcut(shortcut);
-            }
-            let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-            // the IME is disabled by capslock.
-            // The letters should be converted to lowercase
-            if inner.disabled_by_capslock() {
-                inner.abort()?;
-                return inner.test_uppercase_input(input);
-            }
-            // The IME is disabled by ctrl/eisu or the user wants to
-            // typer uppercase letters with the good old capslock.
-            // Simply disable the IME completely solves the problem.
-            if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
-                inner.abort()?;
-                return Ok(FALSE);
-            }
-            inner.test_input(input)
-        
+
+        trace!("OnTestKeyDown({:#04X})", wparam.0);
+        let mut inner = self.write()?;
+        // track ctrl
+        inner.fresh_ctrl = is_ctrl(wparam);
+        // detect shortcut
+        if let Some(shortcut) = Shortcut::try_from(wparam.0) {
+            return inner.test_shortcut(shortcut);
+        }
+        let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
+        // the IME is disabled by capslock.
+        // The letters should be converted to lowercase
+        if inner.disabled_by_capslock() {
+            inner.abort()?;
+            return inner.test_uppercase_input(input);
+        }
+        // The IME is disabled by ctrl/eisu or the user wants to
+        // typer uppercase letters with the good old capslock.
+        // Simply disable the IME completely solves the problem.
+        if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
+            inner.abort()?;
+            return Ok(FALSE);
+        }
+        inner.test_input(input)
     }
 
     /// The return value suggests if the key event **is** eaten or not.
@@ -89,24 +89,23 @@ impl ITfKeyEventSink_Impl for TextService {
         lparam: LPARAM,
     ) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("OnKeyDown({:#04X})", wparam.0);
-            let mut inner = self.write()?;
-            inner.fresh_ctrl = is_ctrl(wparam);
-            if let Some(shortcut) = Shortcut::try_from(wparam.0) {
-                return inner.handle_shortcut(shortcut);
-            }
-            let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-            if inner.disabled_by_capslock() {
-                inner.abort()?;
-                return inner.handle_uppercase_input(input, context);
-            }
-            if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
-                inner.abort()?;
-                return Ok(FALSE);
-            }
-            inner.handle_input(input, context)
-        
+
+        trace!("OnKeyDown({:#04X})", wparam.0);
+        let mut inner = self.write()?;
+        inner.fresh_ctrl = is_ctrl(wparam);
+        if let Some(shortcut) = Shortcut::try_from(wparam.0) {
+            return inner.handle_shortcut(shortcut);
+        }
+        let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
+        if inner.disabled_by_capslock() {
+            inner.abort()?;
+            return inner.handle_uppercase_input(input, context);
+        }
+        if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
+            inner.abort()?;
+            return Ok(FALSE);
+        }
+        inner.handle_input(input, context)
     }
 
     /// Flip the modifiers back
@@ -117,17 +116,16 @@ impl ITfKeyEventSink_Impl for TextService {
         _lparam: LPARAM,
     ) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("OnTestKeyUp({:#04X})", wparam.0);
-            if is_ctrl(wparam) {
-                let mut inner = self.write()?;
-                if inner.fresh_ctrl {
-                    inner.fresh_ctrl = false;
-                    inner.disabled_by_ctrl = !inner.disabled_by_ctrl
-                }
+
+        trace!("OnTestKeyUp({:#04X})", wparam.0);
+        if is_ctrl(wparam) {
+            let mut inner = self.write()?;
+            if inner.fresh_ctrl {
+                inner.fresh_ctrl = false;
+                inner.disabled_by_ctrl = !inner.disabled_by_ctrl
             }
-            Ok(FALSE)
-        
+        }
+        Ok(FALSE)
     }
 
     fn OnKeyUp(
@@ -137,57 +135,53 @@ impl ITfKeyEventSink_Impl for TextService {
         _lparam: LPARAM,
     ) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("OnKeyUp({:#04X})", wparam.0);
-            if is_ctrl(wparam) {
-                let mut inner = self.write()?;
-                if inner.fresh_ctrl {
-                    inner.fresh_ctrl = false;
-                    inner.disabled_by_ctrl = !inner.disabled_by_ctrl
-                }
+
+        trace!("OnKeyUp({:#04X})", wparam.0);
+        if is_ctrl(wparam) {
+            let mut inner = self.write()?;
+            if inner.fresh_ctrl {
+                inner.fresh_ctrl = false;
+                inner.disabled_by_ctrl = !inner.disabled_by_ctrl
             }
-            Ok(FALSE)
-        
+        }
+        Ok(FALSE)
     }
 
     /// I 've never seen this thing called.
     fn OnPreservedKey(&self, _context: Option<&ITfContext>, rguid: *const GUID) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!(
-                "OnPreservedKey({:?})",
-                unsafe { rguid.as_ref() }.map(GUID::to_rfc4122)
-            );
-            Ok(FALSE)
-        
+
+        trace!(
+            "OnPreservedKey({:?})",
+            unsafe { rguid.as_ref() }.map(GUID::to_rfc4122)
+        );
+        Ok(FALSE)
     }
 
     fn OnSetFocus(&self, foreground: BOOL) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("OnSetFocus({})", foreground.as_bool());
-            if !foreground.as_bool() {
-                self.write()?.abort()
-            } else {
-                Ok(())
-            }
-        
+
+        trace!("OnSetFocus({})", foreground.as_bool());
+        if !foreground.as_bool() {
+            self.write()?.abort()
+        } else {
+            Ok(())
+        }
     }
 }
 
 fn is_ctrl(wparam: WPARAM) -> bool {
     //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-    
-        wparam.0 == VK_CONTROL.0 as usize
-            || wparam.0 == VK_LCONTROL.0 as usize
-            || wparam.0 == VK_RCONTROL.0 as usize
-    
+
+    wparam.0 == VK_CONTROL.0 as usize
+        || wparam.0 == VK_LCONTROL.0 as usize
+        || wparam.0 == VK_RCONTROL.0 as usize
 }
 
 impl TextServiceInner {
     // fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
     //     //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
+
     //         // let hkl = self.hkl.ok_or(Error::HKLMissing)?;
     //         let hkl = self.hkl;
     //         let input = match keycode {
@@ -221,45 +215,44 @@ impl TextServiceInner {
     //             }
     //         };
     //         Ok(input)
-        
+
     // }
 
     fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            // let hkl = self.hkl.ok_or(Error::HKLMissing)?;
-            let hkl = self.hkl;
-            let input = match keycode {
-                0x08 => Backspace,
-                0x09 => Tab,
-                0x0D => Enter,
-                0x20 => Space,
-                0x25 => Left,
-                0x26 => Up,
-                0x27 => Right,
-                0x28 => Down,
-                keycode @ 0x00..0x20 | keycode @ 0x7F => Unknown(keycode),
-                keycode => {
-                    let mut buf = [0; 8];
-                    let mut keyboard_state = [0; 256];
-                    let ret = unsafe {
-                        GetKeyboardState(&mut keyboard_state)?;
-                        ToUnicodeEx(keycode, scancode, &keyboard_state, &mut buf, 0, hkl)
-                    };
-                    if ret == 0 {
-                        return Ok(Unknown(keycode));
-                    }
-                    let Ok(ch) = char::try_from_utf16(buf[0]) else {
-                        return Ok(Unknown(keycode));
-                    };
-                    match ch {
-                        number @ '0'..='9' => Number(number as usize - '0' as usize),
-                        _ => Key(to_keycode(ch, keycode)),
-                    }
+
+        // let hkl = self.hkl.ok_or(Error::HKLMissing)?;
+        let hkl = self.hkl;
+        let input = match keycode {
+            0x08 => Backspace,
+            0x09 => Tab,
+            0x0D => Enter,
+            0x20 => Space,
+            0x25 => Left,
+            0x26 => Up,
+            0x27 => Right,
+            0x28 => Down,
+            keycode @ 0x00..0x20 | keycode @ 0x7F => Unknown(keycode),
+            keycode => {
+                let mut buf = [0; 8];
+                let mut keyboard_state = [0; 256];
+                let ret = unsafe {
+                    GetKeyboardState(&mut keyboard_state)?;
+                    ToUnicodeEx(keycode, scancode, &keyboard_state, &mut buf, 0, hkl)
+                };
+                if ret == 0 {
+                    return Ok(Unknown(keycode));
                 }
-            };
-            Ok(input)
-        
+                let Ok(ch) = char::try_from_utf16(buf[0]) else {
+                    return Ok(Unknown(keycode));
+                };
+                match ch {
+                    number @ '0'..='9' => Number(number as usize - '0' as usize),
+                    _ => Key(to_keycode(ch, keycode)),
+                }
+            }
+        };
+        Ok(input)
     }
 }
 
@@ -272,16 +265,15 @@ enum Shortcut {
 impl Shortcut {
     fn try_from(key_code: usize) -> Option<Shortcut> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
-            let alt = VK_MENU.is_down();
-            let shift = VK_SHIFT.is_down() || VK_LSHIFT.is_down() || VK_RSHIFT.is_down();
-            match (ctrl, alt, shift, key_code) {
-                (true, false, true, 0x4E) => Some(NextSchema), // Ctrl + Shift + N
-                (true, ..) | (_, true, ..) => Some(Undefined),
-                _ => None,
-            }
-        
+
+        let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
+        let alt = VK_MENU.is_down();
+        let shift = VK_SHIFT.is_down() || VK_LSHIFT.is_down() || VK_RSHIFT.is_down();
+        match (ctrl, alt, shift, key_code) {
+            (true, false, true, 0x4E) => Some(NextSchema), // Ctrl + Shift + N
+            (true, ..) | (_, true, ..) => Some(Undefined),
+            _ => None,
+        }
     }
 }
 
@@ -314,122 +306,123 @@ enum Input {
 impl TextServiceInner {
     fn test_input(&self, input: Input) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("test_input({:?})", input);
-            if self.composition.is_none() {
-                match input {
-                    Letter(_) | Punct(_) | Space => Ok(TRUE),
-                    _ => Ok(FALSE),
-                }
-            } else {
-                Ok(TRUE)
+
+        trace!("test_input({:?})", input);
+        if self.composition.is_none() {
+            match input {
+                Letter(_) | Punct(_) | Space => Ok(TRUE),
+                _ => Ok(FALSE),
             }
-        
+        } else {
+            Ok(TRUE)
+        }
     }
 
     fn handle_input(&mut self, input: Input, context: Option<&ITfContext>) -> Result<BOOL> {
-        log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("handle_input({:?})", input);
-            let Some(context) = context else {
-                warn!("Context is None");
-                return Ok(FALSE);
-            };
-            self.context = Some(context.clone());
-            if self.composition.is_none() {
-                match input {
-                    // letters start compositions. punctuators need to be re-mapped.
-                    Key(key) => {
-                        self.start_composition()?;
-                        self.keypress(key)?
-                    }
-                    // Punct(punct) => {
-                    //     let ch = self.engine.remap_punct(punct);
-                    //     self.insert_char(ch)?
-                    // }
-                    // Space => {
-                    //     let ch = self.engine.remap_punct(' ');
-                    //     self.insert_char(ch)?
-                    // }
-                    _ => return Ok(FALSE),
+        log::info!(
+            "[{}:{};{}] {}()",
+            file!(),
+            line!(),
+            column!(),
+            crate::function!()
+        );
+
+        trace!("handle_input({:?})", input);
+        let Some(context) = context else {
+            warn!("Context is None");
+            return Ok(FALSE);
+        };
+        self.context = Some(context.clone());
+        if self.composition.is_none() {
+            match input {
+                // letters start compositions. punctuators need to be re-mapped.
+                Key(key) => {
+                    self.start_composition()?;
+                    self.keypress(key)?
                 }
-            } else {
-                match input {
-                    Number(0) => (),
-                    Number(number) => self.select(number - 1)?,
-                    Key(key) => self.keypress(key)?,
-                    // Punct(punct) => {
-                    //     let remmaped = self.engine.remap_punct(punct);
-                    //     if remmaped.is_joiner() {
-                    //         self.keypress(punct)?;
-                    //     } else {
-                    //         self.force_commit(remmaped)?;
-                    //     }
-                    // }
-                    Space =>{ 
-                        self.commit()?;
-                        return Ok(FALSE);
-                    },
-                    Enter => {
-                        // self.release()?;
-                        self.commit()?;
-                        return Ok(FALSE);
-                    }
-                    Backspace => self.pop()?,
-                    // Tab => {
-                    //     self.keypress(' ')?;
-                    //     self.release()?
-                    // }
-                    // disable cursor movement because I am lazy.
-                    Left | Up | Right | Down => (),
-                    _ => {
-                        return Ok(FALSE);
-                    }
+                // Punct(punct) => {
+                //     let ch = self.engine.remap_punct(punct);
+                //     self.insert_char(ch)?
+                // }
+                // Space => {
+                //     let ch = self.engine.remap_punct(' ');
+                //     self.insert_char(ch)?
+                // }
+                _ => return Ok(FALSE),
+            }
+        } else {
+            match input {
+                Number(0) => (),
+                Number(number) => self.select(number - 1)?,
+                Key(key) => self.keypress(key)?,
+                // Punct(punct) => {
+                //     let remmaped = self.engine.remap_punct(punct);
+                //     if remmaped.is_joiner() {
+                //         self.keypress(punct)?;
+                //     } else {
+                //         self.force_commit(remmaped)?;
+                //     }
+                // }
+                Space => {
+                    self.commit()?;
+                    return Ok(FALSE);
+                }
+                Enter => {
+                    // self.release()?;
+                    self.commit()?;
+                    return Ok(FALSE);
+                }
+                Backspace => self.pop()?,
+                // Tab => {
+                //     self.keypress(' ')?;
+                //     self.release()?
+                // }
+                // disable cursor movement because I am lazy.
+                Left | Up | Right | Down => (),
+                _ => {
+                    return Ok(FALSE);
                 }
             }
-            Ok(TRUE)
-        
+        }
+        Ok(TRUE)
     }
 
     fn insert_char(&mut self, ch: char) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            self.char_buf.clear();
-            self.char_buf.push(ch);
-            let text = OsString::from(&self.char_buf).to_wchars();
-            edit_session::insert_text(self.tid, self.context()?, &text)
-        
+
+        self.char_buf.clear();
+        self.char_buf.push(ch);
+        let text = OsString::from(&self.char_buf).to_wchars();
+        edit_session::insert_text(self.tid, self.context()?, &text)
     }
 
     fn test_shortcut(&self, shortcut: Shortcut) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            if self.composition.is_none() {
-                match shortcut {
-                    NextSchema => Ok(TRUE),
-                    _ => Ok(FALSE),
-                }
-            } else {
-                Ok(FALSE)
+
+        if self.composition.is_none() {
+            match shortcut {
+                NextSchema => Ok(TRUE),
+                _ => Ok(FALSE),
             }
-        
+        } else {
+            Ok(FALSE)
+        }
     }
 
     fn handle_shortcut(&mut self, shortcut: Shortcut) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            if self.composition.is_none() {
-                match shortcut {
-                    NextSchema => {
-                        self.engine.next_schema();
-                        Ok(TRUE)
-                    }
-                    _ => Ok(FALSE),
+
+        if self.composition.is_none() {
+            match shortcut {
+                NextSchema => {
+                    self.engine.next_schema();
+                    Ok(TRUE)
                 }
-            } else {
-                Ok(FALSE)
+                _ => Ok(FALSE),
             }
-        
+        } else {
+            Ok(FALSE)
+        }
     }
 }
 
@@ -444,35 +437,32 @@ impl TextServiceInner {
 impl TextServiceInner {
     fn disabled_naively(&self) -> bool {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            match conf::get().behavior.toggle {
-                Some(Toggle::Ctrl) => self.disabled_by_ctrl,
-                Some(Toggle::Eisu) => VK_KANJI.is_toggled(),
-                Some(Toggle::CapsLock) | None => false,
-            }
-        
+
+        match conf::get().behavior.toggle {
+            Some(Toggle::Ctrl) => self.disabled_by_ctrl,
+            Some(Toggle::Eisu) => VK_KANJI.is_toggled(),
+            Some(Toggle::CapsLock) | None => false,
+        }
     }
 
     fn disabled_by_capslock(&self) -> bool {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            match conf::get().behavior.toggle {
-                Some(Toggle::Ctrl) | Some(Toggle::Eisu) | None => false,
-                Some(Toggle::CapsLock) => VK_CAPITAL.is_toggled(),
-            }
-        
+
+        match conf::get().behavior.toggle {
+            Some(Toggle::Ctrl) | Some(Toggle::Eisu) | None => false,
+            Some(Toggle::CapsLock) => VK_CAPITAL.is_toggled(),
+        }
     }
 
     fn test_uppercase_input(&self, input: Input) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("test_uppercase_input({:?})", input);
-            // non-ascii letters are actually categorized under Punct... my bad.
-            match input {
-                Letter(_) | Punct(_) => Ok(TRUE),
-                _ => Ok(FALSE),
-            }
-        
+
+        trace!("test_uppercase_input({:?})", input);
+        // non-ascii letters are actually categorized under Punct... my bad.
+        match input {
+            Letter(_) | Punct(_) => Ok(TRUE),
+            _ => Ok(FALSE),
+        }
     }
 
     fn handle_uppercase_input(
@@ -481,20 +471,19 @@ impl TextServiceInner {
         context: Option<&ITfContext>,
     ) -> Result<BOOL> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        
-            trace!("handle_uppercase_input({:?})", input);
-            let Some(context) = context else {
-                warn!("Context is None");
-                return Ok(FALSE);
-            };
-            self.context = Some(context.clone());
-            match input {
-                Letter(ch) | Punct(ch) => {
-                    self.insert_char(ch.to_lowercase().next().unwrap_or(ch))?;
-                    Ok(TRUE)
-                }
-                _ => Ok(FALSE),
+
+        trace!("handle_uppercase_input({:?})", input);
+        let Some(context) = context else {
+            warn!("Context is None");
+            return Ok(FALSE);
+        };
+        self.context = Some(context.clone());
+        match input {
+            Letter(ch) | Punct(ch) => {
+                self.insert_char(ch.to_lowercase().next().unwrap_or(ch))?;
+                Ok(TRUE)
             }
-        
+            _ => Ok(FALSE),
+        }
     }
 }

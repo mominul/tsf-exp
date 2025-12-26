@@ -1,33 +1,28 @@
-use std::
-    mem::{ManuallyDrop, size_of}
-;
+use std::mem::{ManuallyDrop, size_of};
 
 use csscolorparser::Color;
 use log::{debug, error, trace};
 use windows::{
-    core::{PCSTR, Result, s, w},
     Win32::{
         Foundation::{BOOL, GetLastError, HWND, LPARAM, LRESULT, RECT, WPARAM},
         Graphics::{
             Direct2D::{
-                Common::{D2D1_ALPHA_MODE_PREMULTIPLIED, D2D1_PIXEL_FORMAT, D2D_RECT_F},
-                D2D1CreateFactory, ID2D1Factory, ID2D1HwndRenderTarget,
-                ID2D1SolidColorBrush, D2D1_FACTORY_TYPE_SINGLE_THREADED,
+                Common::{D2D_RECT_F, D2D1_ALPHA_MODE_PREMULTIPLIED, D2D1_PIXEL_FORMAT},
+                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, D2D1_FACTORY_TYPE_SINGLE_THREADED,
                 D2D1_HWND_RENDER_TARGET_PROPERTIES, D2D1_PRESENT_OPTIONS_NONE,
-                D2D1_RENDER_TARGET_PROPERTIES, D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT,
+                D2D1_RENDER_TARGET_PROPERTIES, D2D1_RENDER_TARGET_TYPE_DEFAULT, D2D1CreateFactory,
+                ID2D1Factory, ID2D1HwndRenderTarget, ID2D1SolidColorBrush,
             },
             DirectWrite::{
-                DWriteCreateFactory, IDWriteFactory, IDWriteTextFormat, IDWriteTextLayout,
                 DWRITE_FACTORY_TYPE_SHARED, DWRITE_FONT_STRETCH_NORMAL, DWRITE_FONT_STYLE_NORMAL,
-                DWRITE_FONT_WEIGHT_NORMAL, DWRITE_PARAGRAPH_ALIGNMENT_CENTER,
-                DWRITE_TEXT_ALIGNMENT_LEADING,
-                DWRITE_MEASURING_MODE_NATURAL, DWRITE_TEXT_METRICS,
+                DWRITE_FONT_WEIGHT_NORMAL, DWRITE_MEASURING_MODE_NATURAL,
+                DWRITE_PARAGRAPH_ALIGNMENT_CENTER, DWRITE_TEXT_ALIGNMENT_LEADING,
+                DWRITE_TEXT_METRICS, DWriteCreateFactory, IDWriteFactory, IDWriteTextFormat,
+                IDWriteTextLayout,
             },
             Dxgi::Common::DXGI_FORMAT_B8G8R8A8_UNORM,
             Gdi::{
-                self, BeginPaint, EndPaint, GetDC, GetDeviceCaps,
-                HDC, InvalidateRect, LOGPIXELSY,
+                self, BeginPaint, EndPaint, GetDC, GetDeviceCaps, HDC, InvalidateRect, LOGPIXELSY,
                 PAINTSTRUCT, ReleaseDC,
             },
         },
@@ -36,10 +31,10 @@ use windows::{
             DestroyWindow, GetClientRect, GetWindowLongPtrA, HICON, HWND_TOPMOST, IDC_ARROW,
             LoadCursorW, RegisterClassExA, SW_HIDE, SW_SHOWNOACTIVATE, SWP_NOACTIVATE, SWP_NOMOVE,
             SWP_NOSIZE, SetWindowLongPtrA, SetWindowPos, ShowWindow, WINDOW_LONG_PTR_INDEX,
-            WM_PAINT, WNDCLASSEXA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST,
-            WS_POPUP,
+            WM_PAINT, WNDCLASSEXA, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TOPMOST, WS_POPUP,
         },
     },
+    core::{PCSTR, Result, s, w},
 };
 
 use crate::{
@@ -138,9 +133,7 @@ fn measure_text_dwrite(
     unsafe {
         let text_wide: Vec<u16> = text.encode_utf16().collect();
         let layout: std::result::Result<IDWriteTextLayout, _> = factory.CreateTextLayout(
-            &text_wide,
-            format,
-            10000.0, // max width
+            &text_wide, format, 10000.0, // max width
             10000.0, // max height
         );
 
@@ -199,7 +192,7 @@ impl CandidateList {
             let dc: HDC = GetDC(window);
             let pixel_per_inch = GetDeviceCaps(dc, LOGPIXELSY);
             let dpi_scale = pixel_per_inch as f32 / 96.0;
-            
+
             // DirectWrite uses DIPs (device independent pixels), convert from points
             let font_size = conf.font.size as f32 * dpi_scale;
             let index_font_size = font_size * 0.7;
@@ -241,33 +234,39 @@ impl CandidateList {
     pub fn show(&self, suggs: &[String]) -> Result<()> {
         unsafe {
             let conf = conf::get();
-            
+
             // Create DirectWrite text formats for measurement
             let (candi_format, index_format) = DW_FACTORY.with(|factory| {
-                let font_name_wide: Vec<u16> = conf.font.name
+                let font_name_wide: Vec<u16> = conf
+                    .font
+                    .name
                     .encode_utf16()
                     .chain(std::iter::once(0))
                     .collect();
 
-                let candi_format = factory.CreateTextFormat(
-                    windows::core::PCWSTR(font_name_wide.as_ptr()),
-                    None,
-                    DWRITE_FONT_WEIGHT_NORMAL,
-                    DWRITE_FONT_STYLE_NORMAL,
-                    DWRITE_FONT_STRETCH_NORMAL,
-                    self.font_size,
-                    w!("en-us"),
-                ).ok();
+                let candi_format = factory
+                    .CreateTextFormat(
+                        windows::core::PCWSTR(font_name_wide.as_ptr()),
+                        None,
+                        DWRITE_FONT_WEIGHT_NORMAL,
+                        DWRITE_FONT_STYLE_NORMAL,
+                        DWRITE_FONT_STRETCH_NORMAL,
+                        self.font_size,
+                        w!("en-us"),
+                    )
+                    .ok();
 
-                let index_format = factory.CreateTextFormat(
-                    windows::core::PCWSTR(font_name_wide.as_ptr()),
-                    None,
-                    DWRITE_FONT_WEIGHT_NORMAL,
-                    DWRITE_FONT_STYLE_NORMAL,
-                    DWRITE_FONT_STRETCH_NORMAL,
-                    self.index_font_size,
-                    w!("en-us"),
-                ).ok();
+                let index_format = factory
+                    .CreateTextFormat(
+                        windows::core::PCWSTR(font_name_wide.as_ptr()),
+                        None,
+                        DWRITE_FONT_WEIGHT_NORMAL,
+                        DWRITE_FONT_STYLE_NORMAL,
+                        DWRITE_FONT_STRETCH_NORMAL,
+                        self.index_font_size,
+                        w!("en-us"),
+                    )
+                    .ok();
 
                 (candi_format, index_format)
             });
@@ -307,10 +306,10 @@ impl CandidateList {
 
             let row_height = max_candi_height.max(index_height);
             let label_height = LABEL_PADDING_TOP as f32 + row_height + LABEL_PADDING_BOTTOM as f32;
-            
+
             let mut wnd_height: f32 = 0.0;
             let mut wnd_width: f32 = 0.0;
-            
+
             if conf.layout.vertical {
                 let candi_num = suggs.len().min(CANDI_NUM) as f32;
                 wnd_height += candi_num * label_height;
@@ -338,7 +337,11 @@ impl CandidateList {
             let highlight_width = if conf.layout.vertical {
                 wnd_width - CLIP_WIDTH as f32 - (BORDER_WIDTH * 2) as f32
             } else {
-                LABEL_PADDING_LEFT as f32 + index_width + INDEX_CANDI_GAP as f32 + candi_widths[0] + LABEL_PADDING_RIGHT as f32
+                LABEL_PADDING_LEFT as f32
+                    + index_width
+                    + INDEX_CANDI_GAP as f32
+                    + candi_widths[0]
+                    + LABEL_PADDING_RIGHT as f32
             };
 
             let arg = PaintArg {
@@ -566,7 +569,11 @@ fn paint(window: HWND) -> LRESULT {
         let mut text_y = BORDER_WIDTH as f32 + LABEL_PADDING_TOP as f32;
 
         // Draw highlighted (first) item
-        let candi_y_adjust_0 = if is_ascii_text(&arg.candis[0]) { ENGLISH_Y_OFFSET } else { 0.0 };
+        let candi_y_adjust_0 = if is_ascii_text(&arg.candis[0]) {
+            ENGLISH_Y_OFFSET
+        } else {
+            0.0
+        };
         draw_text_with_color_emoji(
             &rt,
             &arg.indice[0],
@@ -601,7 +608,11 @@ fn paint(window: HWND) -> LRESULT {
                 candi_x = index_x + arg.index_width + INDEX_CANDI_GAP as f32;
             }
 
-            let candi_y_adjust_i = if is_ascii_text(&arg.candis[i]) { ENGLISH_Y_OFFSET } else { 0.0 };
+            let candi_y_adjust_i = if is_ascii_text(&arg.candis[i]) {
+                ENGLISH_Y_OFFSET
+            } else {
+                0.0
+            };
             draw_text_with_color_emoji(
                 &rt,
                 &arg.indice[i],
