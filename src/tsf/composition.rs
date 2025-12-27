@@ -139,9 +139,16 @@ impl TextServiceInner {
         let suggestion = self.riti.get_suggestion_for_key(key, 0, 0);
 
         self.spelling = suggestion.get_auxiliary_text().to_string();
+        let prev = suggestion.previously_selected_index();
         self.suggestions = Some(suggestion); //self.engine.suggest(&self.spelling);
+
         self.udpate_preedit()?;
         self.update_candidate_list()?;
+
+        if prev != 0 {
+            self.candidate_list()?.set_highlight(prev);
+        }
+
         Ok(())
     }
 
@@ -167,19 +174,12 @@ impl TextServiceInner {
     pub fn commit(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        self.riti.candidate_committed(0);
         let mut selected = 0;
-
+        
         if let Ok(candidate_list) = self.candidate_list() {
             selected = candidate_list.get_highlighted_index();
         }
-
-        // if self.suggestions.as_ref().unwrap().is_empty() {
-        //     self.force_release(' ')
-        // } else {
-        //     self.select(0)
-        // }
-
+        
         self.select(selected)
     }
 
@@ -216,6 +216,7 @@ impl TextServiceInner {
         if index >= self.suggestions.as_ref().unwrap().len() {
             return Ok(());
         }
+
         let sugg = self
             .suggestions
             .as_ref()
@@ -223,23 +224,17 @@ impl TextServiceInner {
             .get_suggestions()
             .get(index)
             .unwrap();
-        // let last = *sugg.groupping.last().unwrap();
-        // if last == self.spelling.len() {
+
+        self.riti.candidate_committed(index);
+        
         if self.selected.is_empty() {
             self.set_text(&sugg)?;
         } else {
             self.selected.push_str(&sugg);
             self.set_text(&self.selected)?;
         };
+        
         self.end_composition()
-        // } else {
-        //     self.selected.push_str(&sugg.output);
-        //     // TODO strip off the begining instead of re allocate
-        //     self.spelling = self.spelling[last..].to_string();
-        //     self.suggestions = self.engine.suggest(&self.spelling);
-        //     self.udpate_preedit()?;
-        //     self.update_candidate_list()
-        // }
     }
 
     // Release the raw ascii chars
