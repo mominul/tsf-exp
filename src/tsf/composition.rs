@@ -5,7 +5,7 @@ use windows::{
     Win32::{
         Foundation::E_FAIL,
         UI::{
-            Input::KeyboardAndMouse::VK_CONTROL,
+            Input::KeyboardAndMouse::{VK_CONTROL, VK_LCONTROL, VK_RCONTROL},
             TextServices::{ITfComposition, ITfCompositionSink_Impl},
         },
     },
@@ -58,6 +58,7 @@ impl TextServiceInner {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         let range = unsafe { self.composition()?.GetRange()? };
         let text = OsString::from(&self.preedit).to_wchars();
+        log::trace!("Preedit wchar text: {:?}", text);
         edit_session::set_text(
             self.tid,
             self.context()?,
@@ -119,6 +120,7 @@ impl TextServiceInner {
         let suggestion = self.riti.get_suggestion_for_key(key, 0, 0);
 
         self.preedit = suggestion.get_auxiliary_text().to_string();
+        log::trace!("Preedit updated to: {}", self.preedit);
         let prev = suggestion.previously_selected_index();
         self.suggestions = Some(suggestion);
 
@@ -135,7 +137,7 @@ impl TextServiceInner {
     pub fn pop(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        let ctrl = VK_CONTROL.is_down();
+        let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
         let suggestion = self.riti.backspace_event(ctrl);
 
         // todo pop can be used to revert selection
