@@ -359,14 +359,6 @@ impl TextServiceInner {
                 Number(0) => (),
                 Number(number) => self.select(number - 1)?,
                 Key(key) => self.keypress(key)?,
-                // Punct(punct) => {
-                //     let remmaped = self.engine.remap_punct(punct);
-                //     if remmaped.is_joiner() {
-                //         self.keypress(punct)?;
-                //     } else {
-                //         self.force_commit(remmaped)?;
-                //     }
-                // }
                 Space => {
                     self.commit()?;
                     return Ok(FALSE);
@@ -377,12 +369,6 @@ impl TextServiceInner {
                     return Ok(FALSE);
                 }
                 Backspace => self.pop()?,
-                // Tab => {
-                //     self.keypress(' ')?;
-                //     self.release()?
-                // }
-                // disable cursor movement because I am lazy.
-                // Left | Up | Right | Down => (),
                 Left => {
                     if let Ok(candidate_list) = self.candidate_list() {
                         candidate_list.move_highlight_prev();

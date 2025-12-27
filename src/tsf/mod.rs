@@ -69,8 +69,6 @@ struct TextServiceInner {
     disabled_by_ctrl: bool,
     // Composition
     composition: Option<ITfComposition>,
-    spelling: String,
-    selected: String,
     suggestions: Option<Suggestion>,
     preedit: String,
     // display attribute provider
@@ -98,9 +96,7 @@ impl TextService {
             disabled_by_ctrl: false,
             cookie: None,
             composition: None,
-            spelling: String::with_capacity(32),
             suggestions: None,
-            selected: String::with_capacity(32),
             preedit: String::with_capacity(32),
             icon: HICON::default(),
             candidate_list: None,

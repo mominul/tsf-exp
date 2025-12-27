@@ -48,8 +48,7 @@ impl TextServiceInner {
         }
         self.riti.finish_input_session();
         self.composition = None;
-        self.spelling.clear();
-        self.selected.clear();
+        self.preedit.clear();
         self.suggestions = None;
         self.candidate_list()?.hide();
         Ok(())
@@ -57,25 +56,6 @@ impl TextServiceInner {
 
     fn udpate_preedit(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        self.preedit.clear();
-        self.preedit.push_str(&self.selected);
-        if self.suggestions.as_ref().unwrap().is_empty() {
-            self.preedit.push_str(&self.spelling);
-        } else {
-            // let mut from = 0;
-            // for to in &self.suggestions[0].groupping {
-            //     self.preedit.push_str(&self.spelling[from..*to]);
-            //     self.preedit.push_str(PREEDIT_DELIMITER);
-            //     from = *to;
-            // }
-            // if from != self.spelling.len() {
-            //     self.preedit.push_str(&self.spelling[from..])
-            // } else {
-            //     self.preedit.pop();
-            // }
-            self.preedit.push_str(&self.spelling);
-        }
         let range = unsafe { self.composition()?.GetRange()? };
         let text = OsString::from(&self.preedit).to_wchars();
         edit_session::set_text(
@@ -138,9 +118,9 @@ impl TextServiceInner {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         let suggestion = self.riti.get_suggestion_for_key(key, 0, 0);
 
-        self.spelling = suggestion.get_auxiliary_text().to_string();
+        self.preedit = suggestion.get_auxiliary_text().to_string();
         let prev = suggestion.previously_selected_index();
-        self.suggestions = Some(suggestion); //self.engine.suggest(&self.spelling);
+        self.suggestions = Some(suggestion);
 
         self.udpate_preedit()?;
         self.update_candidate_list()?;
@@ -160,11 +140,11 @@ impl TextServiceInner {
 
         // todo pop can be used to revert selection
         if suggestion.is_empty() {
-            self.spelling.clear();
+            self.preedit.clear();
             return self.abort();
         }
-        self.spelling = suggestion.get_auxiliary_text().to_string();
-        self.suggestions = Some(suggestion); //self.engine.suggest(&self.spelling);
+        self.preedit = suggestion.get_auxiliary_text().to_string();
+        self.suggestions = Some(suggestion);
         self.udpate_preedit()?;
         self.update_candidate_list()?;
         Ok(())
@@ -197,14 +177,8 @@ impl TextServiceInner {
                 .get_suggestions()
                 .first()
                 .unwrap();
-            self.selected.push_str(&sugg);
-            // let last = *sugg.groupping.last().unwrap();
-            // if last != self.spelling.len() {
-            //     self.selected.push(' ');
-            //     self.selected.push_str(&self.spelling[last..])
-            // }
-            self.selected.push(ch);
-            self.set_text(&self.selected)?;
+            
+            self.set_text(&sugg)?;
             self.end_composition()
         }
     }
@@ -227,13 +201,8 @@ impl TextServiceInner {
 
         self.riti.candidate_committed(index);
         
-        if self.selected.is_empty() {
-            self.set_text(&sugg)?;
-        } else {
-            self.selected.push_str(&sugg);
-            self.set_text(&self.selected)?;
-        };
-        
+        self.set_text(&sugg)?;
+
         self.end_composition()
     }
 
@@ -241,28 +210,14 @@ impl TextServiceInner {
     pub fn release(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        if self.selected.is_empty() {
-            self.set_text(&self.spelling)?;
-        } else {
-            self.selected.push(' ');
-            self.selected.push_str(&self.spelling);
-            self.set_text(&self.selected)?;
-        }
+        self.set_text(&self.preedit)?;
         self.end_composition()
     }
 
     fn force_release(&mut self, ch: char) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        if self.selected.is_empty() {
-            self.spelling.push(ch);
-            self.set_text(&self.spelling)?;
-        } else {
-            self.selected.push(' ');
-            self.selected.push_str(&self.spelling);
-            self.selected.push(ch);
-            self.set_text(&self.selected)?;
-        }
+        self.preedit.push(ch);
+        self.set_text(&self.preedit)?;
         self.end_composition()
     }
 
@@ -270,15 +225,8 @@ impl TextServiceInner {
     pub fn abort(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        if self.selected.is_empty() {
-            let _ = self.set_text(&self.spelling);
-        } else {
-            if !self.spelling.is_empty() {
-                self.selected.push(' ');
-                self.selected.push_str(&self.spelling);
-            }
-            self.set_text(&self.selected)?;
-        }
+        let _ = self.set_text(&self.preedit);
+
         self.end_composition()
     }
 }
