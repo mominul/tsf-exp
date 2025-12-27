@@ -19,7 +19,7 @@ use windows::{
 
 use super::{TextService, TextServiceInner, edit_session};
 use crate::{
-    conf::{self, Toggle},
+    conf::{self, Toggle, load_riti_config},
     extend::{CharExt, GUIDExt, OsStrExt2, VKExt},
     tsf::keycode::to_keycode,
 };
@@ -337,6 +337,10 @@ impl TextServiceInner {
             match input {
                 // letters start compositions. punctuators need to be re-mapped.
                 Key(key) => {
+                    log::trace!("Starting composition");
+                    let riti_config = load_riti_config();
+                    log::trace!("Riti config loaded: {:?}", riti_config);
+                    self.riti.update_engine(&riti_config);
                     self.start_composition()?;
                     self.keypress(key)?
                 }

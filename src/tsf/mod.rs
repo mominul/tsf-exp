@@ -12,7 +12,7 @@ use std::time::{Duration, Instant};
 use log::{debug, error, warn};
 use log_derive::logfn;
 use parking_lot::{RwLock, RwLockWriteGuard};
-use riti::{config::Config, context::RitiContext, suggestion::Suggestion};
+use riti::{context::RitiContext, suggestion::Suggestion};
 use windows::{
     Win32::{
         Foundation::E_FAIL,
@@ -28,7 +28,7 @@ use windows::{
     core::{AsImpl, Interface, Result, VARIANT, implement},
 };
 
-use crate::{global::IME_KEYBOARD_US, ui::candidate_list::CandidateList};
+use crate::{conf::load_riti_config, global::IME_KEYBOARD_US, ui::candidate_list::CandidateList};
 
 //----------------------------------------------------------------------------
 //
@@ -85,12 +85,7 @@ struct TextServiceInner {
 impl TextService {
     #[logfn(err = "Error")]
     pub fn create() -> Result<ITfTextInputProcessor> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        let mut riti_config = Config::default();
-        riti_config.set_layout_file_path("avro_phonetic");
-        riti_config.set_database_dir("");
-        riti_config.set_phonetic_suggestion(true);
-        riti_config.set_suggestion_include_english(true);
+        let riti_config = load_riti_config();
 
         let inner = TextServiceInner {
             riti: RitiContext::new_with_config(&riti_config),
