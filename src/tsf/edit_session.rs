@@ -1,14 +1,11 @@
-use std::{cell::Cell, mem::ManuallyDrop};
+use std::{cell::Cell, mem::ManuallyDrop, ptr};
 
 use log::{error, trace};
 use windows::{
     Win32::{
         Foundation::{BOOL, FALSE, RECT, S_OK},
         UI::TextServices::{
-            GUID_PROP_ATTRIBUTE, ITfComposition, ITfCompositionSink, ITfContext,
-            ITfContextComposition, ITfEditSession, ITfEditSession_Impl, ITfInsertAtSelection,
-            ITfRange, TF_AE_NONE, TF_ANCHOR_END, TF_ES_READWRITE, TF_IAS_QUERYONLY, TF_SELECTION,
-            TF_SELECTIONSTYLE, TF_ST_CORRECTION,
+            GUID_PROP_ATTRIBUTE, ITfComposition, ITfCompositionSink, ITfContext, ITfContextComposition, ITfEditSession, ITfEditSession_Impl, ITfInsertAtSelection, ITfRange, TF_AE_END, TF_AE_NONE, TF_ANCHOR_END, TF_ANCHOR_START, TF_ES_ASYNCDONTCARE, TF_ES_READWRITE, TF_ES_SYNC, TF_IAS_QUERYONLY, TF_SELECTION, TF_SELECTIONSTYLE, TF_ST_CORRECTION
         },
     },
     core::{AsImpl, Interface, Result, VARIANT, implement},
@@ -62,7 +59,7 @@ pub fn start_composition(
     });
 
     unsafe {
-        let result = context.RequestEditSession(tid, &session, TF_ES_READWRITE)?;
+        let result = context.RequestEditSession(tid, &session, TF_ES_SYNC | TF_ES_READWRITE)?;
         if result != S_OK {
             Err(result.into())
         } else {
@@ -86,7 +83,7 @@ pub fn end_composition(tid: u32, context: &ITfContext, composition: &ITfComposit
     }
     let session = ITfEditSession::from(Session(composition));
     unsafe {
-        let result = context.RequestEditSession(tid, &session, TF_ES_READWRITE)?;
+        let result = context.RequestEditSession(tid, &session, TF_ES_SYNC | TF_ES_READWRITE)?;
         if result != S_OK {
             Err(result.into())
         } else {
@@ -117,25 +114,29 @@ pub fn set_text(
         fn DoEditSession(&self, ec: u32) -> Result<()> {
             unsafe {
                 // apply underscore
-                if let Some(display_attribute) = self.dispaly_attribute {
-                    self.range.SetText(ec, TF_ST_CORRECTION, self.text)?;
-                    let prop = self.context.GetProperty(&GUID_PROP_ATTRIBUTE)?;
-                    if let Err(e) = prop.SetValue(ec, &self.range, display_attribute) {
-                        error!("Failed to set display attribute. {}", e);
-                    }
-                } else {
+                // if let Some(display_attribute) = self.dispaly_attribute {
+                //     self.range.SetText(ec, 0, self.text)?;
+                //     let prop = self.context.GetProperty(&GUID_PROP_ATTRIBUTE)?;
+                //     if let Err(e) = prop.SetValue(ec, &self.range, display_attribute) {
+                //         error!("Failed to set display attribute. {}", e);
+                //     }
+                // } else {
                     // using 0 for dwflag will remove the propety
                     self.range.SetText(ec, 0, self.text)?;
-                }
+                // }
                 if self.text.is_empty() {
                     return Ok(());
                 }
                 // move the cursor to the end
-                self.range.Collapse(ec, TF_ANCHOR_END)?;
+                //self.range.Collapse(ec, TF_ANCHOR_END)?;
+                let mut moved = 0;
+                self.range.Collapse(ec, TF_ANCHOR_START)?;
+                self.range.ShiftEnd(ec, (self.text.len()) as i32, &mut moved, ptr::null())?;
+                self.range.ShiftStart(ec, (self.text.len()) as i32, &mut moved, ptr::null())?;
                 let selection = TF_SELECTION {
                     range: ManuallyDrop::new(Some(self.range.clone())),
                     style: TF_SELECTIONSTYLE {
-                        ase: TF_AE_NONE,
+                        ase: TF_AE_END,
                         fInterimChar: FALSE,
                     },
                 };
@@ -152,7 +153,7 @@ pub fn set_text(
         dispaly_attribute,
     });
     unsafe {
-        let result = context.RequestEditSession(tid, &session, TF_ES_READWRITE)?;
+        let result = context.RequestEditSession(tid, &session, TF_ES_ASYNCDONTCARE | TF_ES_READWRITE)?;
         if result != S_OK {
             Err(result.into())
         } else {
