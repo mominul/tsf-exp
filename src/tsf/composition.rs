@@ -54,7 +54,7 @@ impl TextServiceInner {
         Ok(())
     }
 
-    fn udpate_preedit(&mut self) -> Result<()> {
+    fn update_preedit(&mut self) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         let range = unsafe { self.composition()?.GetRange()? };
         let text = OsString::from(&self.preedit).to_wchars();
@@ -117,19 +117,31 @@ impl TextServiceInner {
 impl TextServiceInner {
     pub fn keypress(&mut self, key: u16) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-        let suggestion = self.riti.get_suggestion_for_key(key, 0, 0);
+        let mut selected: u8 = 0;
 
-        self.preedit = suggestion.get_auxiliary_text().to_string();
-        log::trace!("Preedit updated to: {}", self.preedit);
-        let prev = suggestion.previously_selected_index();
-        self.suggestions = Some(suggestion);
-
-        self.udpate_preedit()?;
-        self.update_candidate_list()?;
-
-        if prev != 0 {
-            self.candidate_list()?.set_highlight(prev);
+        if let Ok(candidate_list) = self.candidate_list() {
+            selected = candidate_list.get_highlighted_index() as u8;
         }
+
+        let suggestion = self.riti.get_suggestion_for_key(key, 0, selected);
+
+        if suggestion.is_lonely() {
+            self.preedit = suggestion.get_pre_edit_text(0);
+            self.update_preedit()?;
+            self.suggestions = Some(suggestion);
+        } else {
+            self.preedit = suggestion.get_auxiliary_text().to_string();
+            let prev = suggestion.previously_selected_index();
+
+            self.suggestions = Some(suggestion);
+            self.update_preedit()?;
+
+            self.update_candidate_list()?;
+    
+            if prev != 0 {
+                self.candidate_list()?.set_highlight(prev);
+            }
+        };
 
         Ok(())
     }
@@ -145,10 +157,18 @@ impl TextServiceInner {
             self.preedit.clear();
             return self.abort();
         }
-        self.preedit = suggestion.get_auxiliary_text().to_string();
-        self.suggestions = Some(suggestion);
-        self.udpate_preedit()?;
-        self.update_candidate_list()?;
+
+        if suggestion.is_lonely() {
+            self.preedit = suggestion.get_pre_edit_text(0);
+            self.suggestions = Some(suggestion);
+            self.update_preedit()?;
+        } else {
+            self.preedit = suggestion.get_auxiliary_text().to_string();
+            self.suggestions = Some(suggestion);
+            self.update_preedit()?;
+            self.update_candidate_list()?;
+        };
+
         Ok(())
     }
 
@@ -158,7 +178,7 @@ impl TextServiceInner {
 
         let mut selected = 0;
         
-        if let Ok(candidate_list) = self.candidate_list() {
+        if !self.suggestions.as_ref().unwrap().is_lonely() && let Ok(candidate_list) = self.candidate_list() {
             selected = candidate_list.get_highlighted_index();
         }
         
@@ -176,9 +196,7 @@ impl TextServiceInner {
                 .suggestions
                 .as_ref()
                 .unwrap()
-                .get_suggestions()
-                .first()
-                .unwrap();
+                .get_pre_edit_text(0);
             
             self.set_text(&sugg)?;
             self.end_composition()
@@ -189,7 +207,7 @@ impl TextServiceInner {
     pub fn select(&mut self, index: usize, append: Option<char>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        if index >= self.suggestions.as_ref().unwrap().len() {
+        if !self.suggestions.as_ref().unwrap().is_lonely() && index >= self.suggestions.as_ref().unwrap().len() {
             return Ok(());
         }
 
@@ -197,9 +215,7 @@ impl TextServiceInner {
             .suggestions
             .as_ref()
             .unwrap()
-            .get_suggestions()
-            .get(index)
-            .unwrap();
+            .get_pre_edit_text(index);
 
         self.riti.candidate_committed(index);
 
