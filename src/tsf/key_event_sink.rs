@@ -310,7 +310,7 @@ impl TextServiceInner {
         trace!("test_input({:?})", input);
         if self.composition.is_none() {
             match input {
-                Letter(_) | Punct(_) | Space => Ok(TRUE),
+                Key(_) => Ok(TRUE),
                 _ => Ok(FALSE),
             }
         } else {
@@ -357,16 +357,14 @@ impl TextServiceInner {
         } else {
             match input {
                 Number(0) => (),
-                Number(number) => self.select(number - 1)?,
+                Number(number) => self.select(number - 1, None)?,
                 Key(key) => self.keypress(key)?,
                 Space => {
-                    self.commit()?;
-                    return Ok(FALSE);
+                    self.commit(Some(' '))?;
                 }
                 Enter => {
                     // self.release()?;
-                    self.commit()?;
-                    return Ok(FALSE);
+                    self.commit(Some('\n'))?;
                 }
                 Backspace => self.pop()?,
                 Left => {

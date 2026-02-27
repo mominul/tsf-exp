@@ -229,6 +229,8 @@ pub fn load_riti_config() -> Config {
     config.set_ansi_encoding(settings.get_ansi_encoding());
     config.set_smart_quote(settings.get_smart_quoting());
 
+    log::info!("Config {:?}", config);
+
     config
 }
 

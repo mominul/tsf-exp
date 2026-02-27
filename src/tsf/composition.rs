@@ -153,7 +153,7 @@ impl TextServiceInner {
     }
 
     /// Commit the 1st suggestion, keeping the unrecognizable trailing characters
-    pub fn commit(&mut self) -> Result<()> {
+    pub fn commit(&mut self, append: Option<char>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         let mut selected = 0;
@@ -162,7 +162,7 @@ impl TextServiceInner {
             selected = candidate_list.get_highlighted_index();
         }
         
-        self.select(selected)
+        self.select(selected, append)
     }
 
     /// Commit the 1st suggestion and release the unrecognizable trailing characters.
@@ -186,7 +186,7 @@ impl TextServiceInner {
     }
 
     /// Select the desired suggestion by pressing numbers. (from the Candidate list)
-    pub fn select(&mut self, index: usize) -> Result<()> {
+    pub fn select(&mut self, index: usize, append: Option<char>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         if index >= self.suggestions.as_ref().unwrap().len() {
@@ -202,6 +202,12 @@ impl TextServiceInner {
             .unwrap();
 
         self.riti.candidate_committed(index);
+
+        let sugg = if let Some(c) = append {
+            &format!("{}{}", sugg, c)
+        } else {
+            &sugg
+        };
         
         self.set_text(&sugg)?;
 
