@@ -62,12 +62,42 @@ const POS_OFFSETY: i32 = 2;
 const FONT_NAME: &str = "Kalpurush";
 const FONT_SIZE: i32 = 20;
 
-const CLIP_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.0, g: 0.47058824, b: 0.84313726, a: 1.0}; // #0078D7
-const BACKGROUND_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1.0}; // #FAFAFA
-const HIGHLIGHT_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.9098039, g: 0.9098039, b: 1.0, a: 1.0}; // #E8E8FF
-const INDEX_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.627451, g: 0.627451, b: 0.627451, a: 1.0}; // #A0A0A0
-const CANDIDATE_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.0, g: 0.0, b: 0.0, a: 1.0}; // black
-const HIGHLIGHTED_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.0, g: 0.0, b: 0.0, a: 1.0}; // black
+const CLIP_COLOR: D2D1_COLOR_F = D2D1_COLOR_F {
+    r: 0.0,
+    g: 0.47058824,
+    b: 0.84313726,
+    a: 1.0,
+}; // #0078D7
+const BACKGROUND_COLOR: D2D1_COLOR_F = D2D1_COLOR_F {
+    r: 0.98039216,
+    g: 0.98039216,
+    b: 0.98039216,
+    a: 1.0,
+}; // #FAFAFA
+const HIGHLIGHT_COLOR: D2D1_COLOR_F = D2D1_COLOR_F {
+    r: 0.9098039,
+    g: 0.9098039,
+    b: 1.0,
+    a: 1.0,
+}; // #E8E8FF
+const INDEX_COLOR: D2D1_COLOR_F = D2D1_COLOR_F {
+    r: 0.627451,
+    g: 0.627451,
+    b: 0.627451,
+    a: 1.0,
+}; // #A0A0A0
+const CANDIDATE_COLOR: D2D1_COLOR_F = D2D1_COLOR_F {
+    r: 0.0,
+    g: 0.0,
+    b: 0.0,
+    a: 1.0,
+}; // black
+const HIGHLIGHTED_COLOR: D2D1_COLOR_F = D2D1_COLOR_F {
+    r: 0.0,
+    g: 0.0,
+    b: 0.0,
+    a: 1.0,
+}; // black
 
 const WINDOW_VERTICAL: bool = false;
 
@@ -333,10 +363,8 @@ impl CandidateList {
 
             // Create DirectWrite text formats for measurement
             let (candi_format, index_format) = DW_FACTORY.with(|factory| {
-                let font_name_wide: Vec<u16> = FONT_NAME
-                    .encode_utf16()
-                    .chain(std::iter::once(0))
-                    .collect();
+                let font_name_wide: Vec<u16> =
+                    FONT_NAME.encode_utf16().chain(std::iter::once(0)).collect();
 
                 let candi_format = factory
                     .CreateTextFormat(
@@ -648,9 +676,7 @@ fn paint(window: HWND) -> LRESULT {
         }
 
         // Draw highlight
-        if let Ok(highlight_brush) =
-            rt.CreateSolidColorBrush(&HIGHLIGHT_COLOR, None)
-        {
+        if let Ok(highlight_brush) = rt.CreateSolidColorBrush(&HIGHLIGHT_COLOR, None) {
             rt.FillRectangle(
                 &D2D_RECT_F {
                     left: highlight_x,
@@ -663,15 +689,9 @@ fn paint(window: HWND) -> LRESULT {
         }
 
         // Create text brushes
-        let index_brush = rt
-            .CreateSolidColorBrush(&INDEX_COLOR, None)
-            .ok();
-        let highlighted_brush = rt
-            .CreateSolidColorBrush(&HIGHLIGHTED_COLOR, None)
-            .ok();
-        let candidate_brush = rt
-            .CreateSolidColorBrush(&CANDIDATE_COLOR, None)
-            .ok();
+        let index_brush = rt.CreateSolidColorBrush(&INDEX_COLOR, None).ok();
+        let highlighted_brush = rt.CreateSolidColorBrush(&HIGHLIGHTED_COLOR, None).ok();
+        let candidate_brush = rt.CreateSolidColorBrush(&CANDIDATE_COLOR, None).ok();
 
         if index_brush.is_none() || highlighted_brush.is_none() || candidate_brush.is_none() {
             error!("Failed to create text brushes");

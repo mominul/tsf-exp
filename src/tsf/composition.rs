@@ -137,7 +137,7 @@ impl TextServiceInner {
             self.update_preedit()?;
 
             self.update_candidate_list()?;
-    
+
             if prev != 0 {
                 self.candidate_list()?.set_highlight(prev);
             }
@@ -177,11 +177,13 @@ impl TextServiceInner {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         let mut selected = 0;
-        
-        if !self.suggestions.as_ref().unwrap().is_lonely() && let Ok(candidate_list) = self.candidate_list() {
+
+        if !self.suggestions.as_ref().unwrap().is_lonely()
+            && let Ok(candidate_list) = self.candidate_list()
+        {
             selected = candidate_list.get_highlighted_index();
         }
-        
+
         self.select(selected, append)
     }
 
@@ -192,12 +194,8 @@ impl TextServiceInner {
         if self.suggestions.as_ref().unwrap().is_empty() {
             self.force_release(ch)
         } else {
-            let sugg = self
-                .suggestions
-                .as_ref()
-                .unwrap()
-                .get_pre_edit_text(0);
-            
+            let sugg = self.suggestions.as_ref().unwrap().get_pre_edit_text(0);
+
             self.set_text(&sugg)?;
             self.end_composition()
         }
@@ -207,15 +205,13 @@ impl TextServiceInner {
     pub fn select(&mut self, index: usize, append: Option<char>) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        if !self.suggestions.as_ref().unwrap().is_lonely() && index >= self.suggestions.as_ref().unwrap().len() {
+        if !self.suggestions.as_ref().unwrap().is_lonely()
+            && index >= self.suggestions.as_ref().unwrap().len()
+        {
             return Ok(());
         }
 
-        let sugg = self
-            .suggestions
-            .as_ref()
-            .unwrap()
-            .get_pre_edit_text(index);
+        let sugg = self.suggestions.as_ref().unwrap().get_pre_edit_text(index);
 
         self.riti.candidate_committed(index);
 
@@ -224,7 +220,7 @@ impl TextServiceInner {
         } else {
             &sugg
         };
-        
+
         self.set_text(&sugg)?;
 
         self.end_composition()

@@ -99,19 +99,15 @@ pub fn register_ime() -> Result<()> {
 #[logfn(err = "Error")]
 pub fn unregister_ime() -> Result<()> {
     unsafe {
-        let profile_mgr: ITfInputProcessorProfileMgr = CoCreateInstance(
-            &CLSID_TF_InputProcessorProfiles,
-            None,
-            CLSCTX_INPROC_SERVER,
-        )?;
+        let profile_mgr: ITfInputProcessorProfileMgr =
+            CoCreateInstance(&CLSID_TF_InputProcessorProfiles, None, CLSCTX_INPROC_SERVER)?;
         let category_mgr: ITfCategoryMgr =
             CoCreateInstance(&CLSID_TF_CategoryMgr, None, CLSCTX_INPROC_SERVER)?;
         for rcatid in SUPPORTED_CATEGORIES {
             category_mgr.UnregisterCategory(&IME_ID, &rcatid, &IME_ID)?;
         }
         log::info!("Unregistered the categories.");
-        profile_mgr
-            .UnregisterProfile(&IME_ID, TEXTSERVICE_LANGID, &LANG_PROFILE_ID, 0)?;
+        profile_mgr.UnregisterProfile(&IME_ID, TEXTSERVICE_LANGID, &LANG_PROFILE_ID, 0)?;
         log::info!("Unregistered the language profile.");
         Ok(())
     }
