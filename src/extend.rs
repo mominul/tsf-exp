@@ -5,7 +5,6 @@ use std::{
     os::windows::ffi::OsStrExt,
 };
 
-use csscolorparser::Color;
 use windows::{
     Win32::{
         Foundation::COLORREF,
@@ -110,19 +109,5 @@ impl VKExt for VIRTUAL_KEY {
 
     fn is_toggled(&self) -> bool {
         unsafe { GetKeyState(self.0 as i32) as u16 & 1 != 0 }
-    }
-}
-
-pub trait ColorExt {
-    fn to_color_ref(&self) -> COLORREF;
-    unsafe fn to_hbrush(&self) -> HBRUSH {
-        unsafe { CreateSolidBrush(self.to_color_ref()) }
-    }
-}
-
-impl ColorExt for Color {
-    fn to_color_ref(&self) -> COLORREF {
-        let [r, g, b, _a] = self.to_rgba8();
-        COLORREF(b as u32 * 0x10000 + g as u32 * 0x100 + r as u32)
     }
 }

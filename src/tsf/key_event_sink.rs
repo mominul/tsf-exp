@@ -19,7 +19,7 @@ use windows::{
 
 use super::{TextService, TextServiceInner, edit_session};
 use crate::{
-    conf::{self, Toggle, load_riti_config},
+    conf::{Toggle, load_riti_config},
     extend::{CharExt, GUIDExt, OsStrExt2, VKExt},
     tsf::keycode::to_keycode,
 };
@@ -436,7 +436,7 @@ impl TextServiceInner {
     fn disabled_naively(&self) -> bool {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        match conf::get().behavior.toggle {
+        match Some(Toggle::Ctrl) {
             Some(Toggle::Ctrl) => self.disabled_by_ctrl,
             Some(Toggle::Eisu) => VK_KANJI.is_toggled(),
             Some(Toggle::CapsLock) | None => false,
@@ -446,7 +446,7 @@ impl TextServiceInner {
     fn disabled_by_capslock(&self) -> bool {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        match conf::get().behavior.toggle {
+        match Some(Toggle::Ctrl) {
             Some(Toggle::Ctrl) | Some(Toggle::Eisu) | None => false,
             Some(Toggle::CapsLock) => VK_CAPITAL.is_toggled(),
         }

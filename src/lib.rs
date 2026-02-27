@@ -155,8 +155,6 @@ pub enum Error {
     LayoutMissing,
     #[error("Requested keyboard layout is invalid.")]
     LayoutInvalid,
-    #[error("Failed to parse '{0}'. {1:?}")]
-    ParseError(&'static str, toml::de::Error),
     #[error("install.dat is corrupted. {0}")]
     InstallDatCorrupted(ParseIntError),
 }

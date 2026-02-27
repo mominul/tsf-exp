@@ -1,103 +1,10 @@
-use std::{env, fs, path::PathBuf, sync::OnceLock};
-
 use riti::config::Config;
-use serde::Deserialize;
 
-use crate::{DEFAULT_CONF, Error, IME_NAME, Result, extend::ResultExt};
+use crate::Result;
 
-// use parking_lot::{RwLock, RwLockReadGuard};
-//
-// static CONF: OnceLock<RwLock<Conf>> = OnceLock::new();
-//
-// pub fn get() -> RwLockReadGuard<'static, Conf> {
-//     CONF2.get_or_init(||RwLock::new(Conf::open_or_default())).read_recursive()
-// }
-//
-// pub fn reload() {
-//     // todo check for last modified
-//     let mut conf = CONF2.get().unwrap().write();
-//     *conf = Conf::open_or_default();
-// }
 
-static CONF: OnceLock<Conf> = OnceLock::new();
-
-pub fn get() -> &'static Conf {
-    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-    CONF.get_or_init(Conf::open_or_default)
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Conf {
-    pub font: Font,
-    pub layout: Layout,
-    pub color: Color,
-    pub behavior: Behavior,
-}
-
-impl Default for Conf {
-    fn default() -> Self {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        toml::from_str(DEFAULT_CONF).unwrap()
-    }
-}
-
-impl Conf {
-    pub fn open() -> Result<Conf> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        let path = PathBuf::from(env::var("APPDATA")?)
-            .join(IME_NAME)
-            .join("conf.toml");
-        if !path.exists() {
-            fs::create_dir_all(path.parent().unwrap())?;
-            fs::write(path, DEFAULT_CONF)?;
-            return Ok(Conf::default());
-        }
-        let conf = fs::read_to_string(path)?;
-        let conf = toml::from_str(&conf).map_err(|e| Error::ParseError("conf.toml", e))?;
-        Ok(conf)
-    }
-
-    pub fn open_or_default() -> Conf {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        Conf::open().log_err().unwrap_or_default()
-    }
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Font {
-    pub name: String,
-    pub size: i32,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Color {
-    pub candidate: csscolorparser::Color,
-    pub index: csscolorparser::Color,
-    pub background: csscolorparser::Color,
-    pub clip: csscolorparser::Color,
-    pub highlight: csscolorparser::Color,
-    pub highlighted: csscolorparser::Color,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Layout {
-    pub vertical: bool,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Behavior {
-    pub toggle: Option<Toggle>,
-    pub long_pi: bool,
-    pub long_glyph: bool,
-}
-
-#[derive(Deserialize, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Toggle {
-    #[serde(alias = "英数")]
     Eisu,
     Ctrl,
     CapsLock,
@@ -232,12 +139,4 @@ pub fn load_riti_config() -> Config {
     log::info!("Config {:?}", config);
 
     config
-}
-
-#[test]
-fn test_open() {
-    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-    let conf = get();
-    println!("{conf:#?}")
 }

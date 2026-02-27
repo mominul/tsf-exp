@@ -82,5 +82,3 @@ pub const ICON_INDEX: u32 = 0;
 pub const CANDI_NUM: usize = 9;
 pub const CANDI_INDEXES: [&str; CANDI_NUM] = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 pub const CANDI_INDEX_SUFFIX: &str = ".";
-// included text
-pub const DEFAULT_CONF: &str = include_str!("../res/conf.toml");

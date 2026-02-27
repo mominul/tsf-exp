@@ -1,8 +1,10 @@
 use std::mem::{ManuallyDrop, size_of};
 use std::sync::RwLock;
 
-use csscolorparser::Color;
 use log::{debug, error, trace};
+use windows::Win32::Foundation::COLORREF;
+use windows::Win32::Graphics::Direct2D::Common::D2D1_COLOR_F;
+use windows::Win32::Graphics::Gdi::CreateSolidBrush;
 use windows::{
     Win32::{
         Foundation::{BOOL, GetLastError, HWND, LPARAM, LRESULT, RECT, WPARAM},
@@ -41,8 +43,6 @@ use windows::{
 
 use crate::{
     CANDI_INDEX_SUFFIX, CANDI_INDEXES,
-    conf::{self},
-    extend::ColorExt,
     global::{self, CANDI_NUM},
 };
 
@@ -58,6 +58,18 @@ const BORDER_WIDTH: i32 = 0;
 
 const POS_OFFSETX: i32 = 2;
 const POS_OFFSETY: i32 = 2;
+
+const FONT_NAME: &str = "Kalpurush";
+const FONT_SIZE: i32 = 20;
+
+const CLIP_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.0, g: 0.47058824, b: 0.84313726, a: 1.0}; // #0078D7
+const BACKGROUND_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.98039216, g: 0.98039216, b: 0.98039216, a: 1.0}; // #FAFAFA
+const HIGHLIGHT_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.9098039, g: 0.9098039, b: 1.0, a: 1.0}; // #E8E8FF
+const INDEX_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.627451, g: 0.627451, b: 0.627451, a: 1.0}; // #A0A0A0
+const CANDIDATE_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.0, g: 0.0, b: 0.0, a: 1.0}; // black
+const HIGHLIGHTED_COLOR: D2D1_COLOR_F = D2D1_COLOR_F { r: 0.0, g: 0.0, b: 0.0, a: 1.0}; // black
+
+const WINDOW_VERTICAL: bool = false;
 
 // Vertical offset adjustment for English text to align with Bangla baseline
 const ENGLISH_Y_OFFSET: f32 = -3.0;
@@ -93,7 +105,7 @@ pub fn setup() -> Result<()> {
         hInstance: global::dll_module(),
         hIcon: HICON::default(),
         hCursor: unsafe { LoadCursorW(None, IDC_ARROW)? },
-        hbrBackground: unsafe { Color::from_linear_rgba8(0, 0, 0, 0).to_hbrush() },
+        hbrBackground: unsafe { CreateSolidBrush(COLORREF(0)) },
         lpszMenuName: PCSTR::null(),
         lpszClassName: WINDOW_CLASS,
         hIconSm: HICON::default(),
@@ -179,7 +191,6 @@ impl CandidateList {
         // WS_POPUP:          A window having no top bar or border.
         // see: https://learn.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles
         unsafe {
-            let conf = conf::get();
             let window = CreateWindowExA(
                 WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
                 WINDOW_CLASS,
@@ -203,7 +214,7 @@ impl CandidateList {
             let dpi_scale = pixel_per_inch as f32 / 96.0;
 
             // DirectWrite uses DIPs (device independent pixels), convert from points
-            let font_size = conf.font.size as f32 * dpi_scale;
+            let font_size = FONT_SIZE as f32 * dpi_scale;
             let index_font_size = font_size * 0.7;
 
             let index_suffix = CANDI_INDEX_SUFFIX;
@@ -311,8 +322,6 @@ impl CandidateList {
     /// Internal method to rebuild PaintArg and trigger repaint
     fn repaint(&self, resize: bool) -> Result<()> {
         unsafe {
-            let conf = conf::get();
-
             // Copy data out of state and release lock early
             let (highlighted_index, suggs) = {
                 let state = self.state.read().unwrap();
@@ -324,9 +333,7 @@ impl CandidateList {
 
             // Create DirectWrite text formats for measurement
             let (candi_format, index_format) = DW_FACTORY.with(|factory| {
-                let font_name_wide: Vec<u16> = conf
-                    .font
-                    .name
+                let font_name_wide: Vec<u16> = FONT_NAME
                     .encode_utf16()
                     .chain(std::iter::once(0))
                     .collect();
@@ -397,7 +404,7 @@ impl CandidateList {
             let mut wnd_height: f32 = 0.0;
             let mut wnd_width: f32 = 0.0;
 
-            if conf.layout.vertical {
+            if WINDOW_VERTICAL {
                 let candi_num = suggs.len().min(CANDI_NUM) as f32;
                 wnd_height += candi_num * label_height;
                 let max_candi_width = candi_widths.iter().cloned().fold(0.0f32, f32::max);
@@ -422,7 +429,7 @@ impl CandidateList {
             wnd_width += (BORDER_WIDTH * 2) as f32;
 
             // Calculate highlight width based on the highlighted candidate
-            let highlight_width = if conf.layout.vertical {
+            let highlight_width = if WINDOW_VERTICAL {
                 wnd_width - CLIP_WIDTH as f32 - (BORDER_WIDTH * 2) as f32
             } else {
                 LABEL_PADDING_LEFT as f32
@@ -442,7 +449,7 @@ impl CandidateList {
                 indice: indice_str,
                 font_size: self.font_size,
                 index_font_size: self.index_font_size,
-                font_name: conf.font.name.clone(),
+                font_name: FONT_NAME.to_owned(),
                 highlighted_index,
             };
             let long_ptr = arg.into_long_ptr();
@@ -505,7 +512,6 @@ impl PaintArg {
 }
 
 fn paint(window: HWND) -> LRESULT {
-    let conf = conf::get();
     let arg = unsafe {
         PaintArg::from_long_ptr(GetWindowLongPtrA(window, WINDOW_LONG_PTR_INDEX::default()))
     };
@@ -600,13 +606,13 @@ fn paint(window: HWND) -> LRESULT {
         rt.BeginDraw();
 
         // Clear with background color
-        rt.Clear(Some(&color_to_d2d(&conf.color.background)));
+        rt.Clear(Some(&BACKGROUND_COLOR));
 
         // Calculate highlight position based on highlighted_index
         let highlight_x: f32;
         let highlight_y: f32;
 
-        if conf.layout.vertical {
+        if WINDOW_VERTICAL {
             highlight_x = (BORDER_WIDTH + CLIP_WIDTH) as f32;
             highlight_y = BORDER_WIDTH as f32 + (arg.highlighted_index as f32 * arg.label_height);
         } else {
@@ -624,8 +630,8 @@ fn paint(window: HWND) -> LRESULT {
         }
 
         // Draw clip (always at top-left, next to highlighted item in vertical mode)
-        if let Ok(clip_brush) = rt.CreateSolidColorBrush(&color_to_d2d(&conf.color.clip), None) {
-            let clip_y = if conf.layout.vertical {
+        if let Ok(clip_brush) = rt.CreateSolidColorBrush(&CLIP_COLOR, None) {
+            let clip_y = if WINDOW_VERTICAL {
                 highlight_y
             } else {
                 BORDER_WIDTH as f32
@@ -643,7 +649,7 @@ fn paint(window: HWND) -> LRESULT {
 
         // Draw highlight
         if let Ok(highlight_brush) =
-            rt.CreateSolidColorBrush(&color_to_d2d(&conf.color.highlight), None)
+            rt.CreateSolidColorBrush(&HIGHLIGHT_COLOR, None)
         {
             rt.FillRectangle(
                 &D2D_RECT_F {
@@ -658,13 +664,13 @@ fn paint(window: HWND) -> LRESULT {
 
         // Create text brushes
         let index_brush = rt
-            .CreateSolidColorBrush(&color_to_d2d(&conf.color.index), None)
+            .CreateSolidColorBrush(&INDEX_COLOR, None)
             .ok();
         let highlighted_brush = rt
-            .CreateSolidColorBrush(&color_to_d2d(&conf.color.highlighted), None)
+            .CreateSolidColorBrush(&HIGHLIGHTED_COLOR, None)
             .ok();
         let candidate_brush = rt
-            .CreateSolidColorBrush(&color_to_d2d(&conf.color.candidate), None)
+            .CreateSolidColorBrush(&CANDIDATE_COLOR, None)
             .ok();
 
         if index_brush.is_none() || highlighted_brush.is_none() || candidate_brush.is_none() {
@@ -686,7 +692,7 @@ fn paint(window: HWND) -> LRESULT {
         // Draw all items, using highlighted color for the selected one
         for i in 0..arg.candis.len() {
             if i > 0 {
-                if conf.layout.vertical {
+                if WINDOW_VERTICAL {
                     text_y += arg.label_height;
                 } else {
                     index_x += arg.index_width
@@ -738,11 +744,6 @@ fn paint(window: HWND) -> LRESULT {
 
     unsafe { EndPaint(window, &ps) };
     LRESULT::default()
-}
-
-fn color_to_d2d(color: &Color) -> windows::Win32::Graphics::Direct2D::Common::D2D1_COLOR_F {
-    let [r, g, b, a] = color.to_array();
-    windows::Win32::Graphics::Direct2D::Common::D2D1_COLOR_F { r, g, b, a }
 }
 
 unsafe fn draw_text_with_color_emoji(

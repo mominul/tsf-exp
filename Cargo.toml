@@ -9,11 +9,8 @@ fern = "0.6"
 chrono = "0.4"
 winreg = "0.52"
 parking_lot = "0.12"
-toml = "0.8.9"
-serde = { version = "1.0", features = ["derive"] }
 thiserror = "2.0.12"
 log-derive = "0.4.1"
-csscolorparser = { version = "0.7.2", features = ["serde"] }
 riti = { path = "riti" }
 
 [dependencies.windows]
