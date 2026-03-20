@@ -13,6 +13,7 @@ use windows::{
 };
 
 use super::TextService;
+use super::key_event_sink::{register_preserved_keys, unregister_preserved_keys};
 use crate::DISPLAY_ATTR_ID;
 
 #[allow(non_snake_case)]
@@ -27,12 +28,15 @@ impl ITfTextInputProcessor_Impl for TextService {
         inner.thread_mgr = Some(thread_mgr.clone());
         unsafe {
             // Use self as event sink to subscribe to events
-            thread_mgr.cast::<ITfKeystrokeMgr>()?.AdviseKeyEventSink(
+            let keystroke_mgr = thread_mgr.cast::<ITfKeystrokeMgr>()?;
+            keystroke_mgr.AdviseKeyEventSink(
                 tid,
                 &inner.interface::<ITfKeyEventSink>()?,
                 true,
             )?;
             debug!("Added key event sink.");
+            register_preserved_keys(&keystroke_mgr, tid);
+            debug!("Registered preserved keys.");
             inner.cookie = Some(thread_mgr.cast::<ITfSource>()?.AdviseSink(
                 &ITfThreadMgrEventSink::IID,
                 &inner.interface::<ITfThreadMgrEventSink>()?,
@@ -59,9 +63,9 @@ impl ITfTextInputProcessor_Impl for TextService {
         let mut inner = self.write()?;
         let thread_mgr = inner.thread_mgr()?;
         unsafe {
-            thread_mgr
-                .cast::<ITfKeystrokeMgr>()?
-                .UnadviseKeyEventSink(inner.tid)?;
+            let keystroke_mgr = thread_mgr.cast::<ITfKeystrokeMgr>()?;
+            unregister_preserved_keys(&keystroke_mgr);
+            keystroke_mgr.UnadviseKeyEventSink(inner.tid)?;
             debug!("Removed key event sink.");
             if let Some(cookie) = inner.cookie {
                 thread_mgr.cast::<ITfSource>()?.UnadviseSink(cookie)?;

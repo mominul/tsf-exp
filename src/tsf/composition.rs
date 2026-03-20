@@ -115,7 +115,7 @@ impl TextServiceInner {
 // handle input and transit state
 // calling these function while not composing would cause the program to crash
 impl TextServiceInner {
-    pub fn keypress(&mut self, key: u16) -> Result<()> {
+    pub fn keypress(&mut self, key: u16, modifier: u8) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         let mut selected: u8 = 0;
 
@@ -123,7 +123,7 @@ impl TextServiceInner {
             selected = candidate_list.get_highlighted_index() as u8;
         }
 
-        let suggestion = self.riti.get_suggestion_for_key(key, 0, selected);
+        let suggestion = self.riti.get_suggestion_for_key(key, modifier, selected);
 
         if suggestion.is_lonely() {
             self.preedit = suggestion.get_pre_edit_text(0);

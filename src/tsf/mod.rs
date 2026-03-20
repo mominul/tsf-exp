@@ -1,7 +1,7 @@
 mod composition;
 pub mod display_attribute_provider;
 mod edit_session;
-mod key_event_sink;
+pub(super) mod key_event_sink;
 pub mod keycode;
 mod langbar_item;
 pub mod text_input_processor;
