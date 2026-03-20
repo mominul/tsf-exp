@@ -2,17 +2,9 @@ use riti::config::Config;
 
 use crate::Result;
 
-#[derive(Debug, Clone, Copy)]
-pub enum Toggle {
-    Eisu,
-    Ctrl,
-    CapsLock,
-}
-
 use winreg::RegKey;
 use winreg::enums::*;
 
-/// Settings manager for OpenBangla Keyboard
 /// Reads settings from Windows Registry (QSettings format)
 pub struct Settings {
     base_key: RegKey,

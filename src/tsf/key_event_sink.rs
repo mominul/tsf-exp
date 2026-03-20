@@ -1,5 +1,3 @@
-use std::ffi::OsString;
-
 use Input::*;
 use log::{trace, warn};
 use riti::context::{MODIFIER_ALT_GR, MODIFIER_SHIFT};
@@ -20,10 +18,10 @@ use windows::{
     core::{GUID, Result},
 };
 
-use super::{TextService, TextServiceInner, edit_session};
+use super::{TextService, TextServiceInner};
 use crate::{
     conf::load_riti_config,
-    extend::{CharExt, GUIDExt, OsStrExt2, VKExt},
+    extend::{CharExt, GUIDExt, VKExt},
     tsf::keycode::{UNKNOWN_KEYCODE, to_keycode},
 };
 //----------------------------------------------------------------------------
@@ -359,14 +357,14 @@ impl TextServiceInner {
         Ok(TRUE)
     }
 
-    fn insert_char(&mut self, ch: char) -> Result<()> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+    // fn insert_char(&mut self, ch: char) -> Result<()> {
+    //     //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
-        self.char_buf.clear();
-        self.char_buf.push(ch);
-        let text = OsString::from(&self.char_buf).to_wchars();
-        edit_session::insert_text(self.tid, self.context()?, &text)
-    }
+    //     self.char_buf.clear();
+    //     self.char_buf.push(ch);
+    //     let text = OsString::from(&self.char_buf).to_wchars();
+    //     edit_session::insert_text(self.tid, self.context()?, &text)
+    // }
 }
 
 //----------------------------------------------------------------------------

@@ -4,16 +4,13 @@ use log::{debug, trace};
 use windows::{
     Win32::{
         Foundation::E_FAIL,
-        UI::{
-            Input::KeyboardAndMouse::{VK_CONTROL, VK_LCONTROL, VK_RCONTROL},
-            TextServices::{ITfComposition, ITfCompositionSink_Impl},
-        },
+        UI::TextServices::{ITfComposition, ITfCompositionSink_Impl},
     },
     core::Result,
 };
 
 use super::{TextService, TextServiceInner, edit_session};
-use crate::extend::{OsStrExt2, VKExt};
+use crate::extend::OsStrExt2;
 
 //----------------------------------------------------------------------------
 //

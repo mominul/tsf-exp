@@ -64,9 +64,6 @@ struct TextServiceInner {
     cookie: Option<u32>,
     // KeyEventSink
     hkl: HKL,
-    char_buf: String,
-    fresh_ctrl: bool,
-    disabled_by_ctrl: bool,
     // Composition
     composition: Option<ITfComposition>,
     suggestions: Option<Suggestion>,
@@ -91,9 +88,6 @@ impl TextService {
             thread_mgr: None,
             context: None,
             hkl: IME_KEYBOARD_US,
-            char_buf: String::with_capacity(4),
-            fresh_ctrl: false,
-            disabled_by_ctrl: false,
             cookie: None,
             composition: None,
             suggestions: None,
