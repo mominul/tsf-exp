@@ -6,11 +6,9 @@ use std::{
 };
 
 use windows::{
-    Win32::{
-        Foundation::COLORREF,
-        Graphics::Gdi::{CreateSolidBrush, HBRUSH},
-        UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY},
-    },
+    Win32::
+        UI::Input::KeyboardAndMouse::{GetKeyState, VIRTUAL_KEY}
+    ,
     core::GUID,
 };
 
@@ -73,27 +71,12 @@ impl OsStrExt2 for OsStr {
 }
 
 pub trait CharExt {
-    fn is_joiner(&self) -> bool;
     fn try_from_utf16(value: u16) -> Result<char, DecodeUtf16Error>;
 }
 
 impl CharExt for char {
-    fn is_joiner(&self) -> bool {
-        matches!(self, '\u{F1995}' | '\u{F1996}' | '\u{200D}')
-    }
-
     fn try_from_utf16(value: u16) -> Result<char, DecodeUtf16Error> {
         char::decode_utf16(iter::once(value)).next().unwrap()
-    }
-}
-
-pub trait IterStr<'a> {
-    fn iter_str(&'a self) -> impl Iterator<Item = &'a str>;
-}
-
-impl<'a> IterStr<'a> for Vec<String> {
-    fn iter_str(&'a self) -> impl Iterator<Item = &'a str> {
-        self.iter().map(String::as_str)
     }
 }
 

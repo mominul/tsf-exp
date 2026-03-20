@@ -146,10 +146,9 @@ impl TextServiceInner {
         Ok(())
     }
 
-    pub fn pop(&mut self) -> Result<()> {
+    pub fn pop(&mut self, ctrl: bool) -> Result<()> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
+        log::info!("Backspace ctrl: {ctrl}");
         let suggestion = self.riti.backspace_event(ctrl);
 
         // todo pop can be used to revert selection

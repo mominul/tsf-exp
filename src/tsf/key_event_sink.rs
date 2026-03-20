@@ -21,7 +21,7 @@ use super::{TextService, TextServiceInner, edit_session};
 use crate::{
     conf::{Toggle, load_riti_config},
     extend::{CharExt, GUIDExt, OsStrExt2, VKExt},
-    tsf::keycode::to_keycode,
+    tsf::keycode::{UNKNOWN_KEYCODE, to_keycode},
 };
 //----------------------------------------------------------------------------
 //
@@ -38,7 +38,7 @@ impl ITfKeyEventSink_Impl for TextService {
     /// Thus you cannot always return `true` to "capture" every event and expect to "release" them later
     /// in `OnKeyDown` by returning `false`.
     ///
-    /// If `false`, the clinet **may** not call `OnKeyDown` afterwards.
+    /// If `false`, the client **may** not call `OnKeyDown` afterwards.
     /// Thus try to gather any needed infomations and states in `OnTestKeyDown` if possible since it
     /// may be your only chance.
     ///
@@ -55,26 +55,26 @@ impl ITfKeyEventSink_Impl for TextService {
 
         trace!("OnTestKeyDown({:#04X})", wparam.0);
         let mut inner = self.write()?;
-        // track ctrl
-        inner.fresh_ctrl = is_ctrl(wparam);
-        // detect shortcut
-        if let Some(shortcut) = Shortcut::try_from(wparam.0) {
-            return inner.test_shortcut(shortcut);
-        }
+        // // track ctrl
+        // inner.fresh_ctrl = is_ctrl(wparam);
+        // // detect shortcut
+        // if let Some(shortcut) = Shortcut::try_from(wparam.0) {
+        //     return inner.test_shortcut(shortcut);
+        // }
         let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-        // the IME is disabled by capslock.
-        // The letters should be converted to lowercase
-        if inner.disabled_by_capslock() {
-            inner.abort()?;
-            return inner.test_uppercase_input(input);
-        }
-        // The IME is disabled by ctrl/eisu or the user wants to
-        // typer uppercase letters with the good old capslock.
-        // Simply disable the IME completely solves the problem.
-        if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
-            inner.abort()?;
-            return Ok(FALSE);
-        }
+        // // the IME is disabled by capslock.
+        // // The letters should be converted to lowercase
+        // if inner.disabled_by_capslock() {
+        //     inner.abort()?;
+        //     return inner.test_uppercase_input(input);
+        // }
+        // // The IME is disabled by ctrl/eisu or the user wants to
+        // // typer uppercase letters with the good old capslock.
+        // // Simply disable the IME completely solves the problem.
+        // if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
+        //     inner.abort()?;
+        //     return Ok(FALSE);
+        // }
         inner.test_input(input)
     }
 
@@ -92,19 +92,19 @@ impl ITfKeyEventSink_Impl for TextService {
 
         trace!("OnKeyDown({:#04X})", wparam.0);
         let mut inner = self.write()?;
-        inner.fresh_ctrl = is_ctrl(wparam);
-        if let Some(shortcut) = Shortcut::try_from(wparam.0) {
-            return inner.handle_shortcut(shortcut);
-        }
+        // inner.fresh_ctrl = is_ctrl(wparam);
+        // if let Some(shortcut) = Shortcut::try_from(wparam.0) {
+        //     return inner.handle_shortcut(shortcut);
+        // }
         let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-        if inner.disabled_by_capslock() {
-            inner.abort()?;
-            return inner.handle_uppercase_input(input, context);
-        }
-        if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
-            inner.abort()?;
-            return Ok(FALSE);
-        }
+        // if inner.disabled_by_capslock() {
+        //     inner.abort()?;
+        //     return inner.handle_uppercase_input(input, context);
+        // }
+        // if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
+        //     inner.abort()?;
+        //     return Ok(FALSE);
+        // }
         inner.handle_input(input, context)
     }
 
@@ -118,13 +118,13 @@ impl ITfKeyEventSink_Impl for TextService {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         trace!("OnTestKeyUp({:#04X})", wparam.0);
-        if is_ctrl(wparam) {
-            let mut inner = self.write()?;
-            if inner.fresh_ctrl {
-                inner.fresh_ctrl = false;
-                inner.disabled_by_ctrl = !inner.disabled_by_ctrl
-            }
-        }
+        // if is_ctrl(wparam) {
+        //     let mut inner = self.write()?;
+        //     if inner.fresh_ctrl {
+        //         inner.fresh_ctrl = false;
+        //         inner.disabled_by_ctrl = !inner.disabled_by_ctrl
+        //     }
+        // }
         Ok(FALSE)
     }
 
@@ -137,13 +137,13 @@ impl ITfKeyEventSink_Impl for TextService {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
 
         trace!("OnKeyUp({:#04X})", wparam.0);
-        if is_ctrl(wparam) {
-            let mut inner = self.write()?;
-            if inner.fresh_ctrl {
-                inner.fresh_ctrl = false;
-                inner.disabled_by_ctrl = !inner.disabled_by_ctrl
-            }
-        }
+        // if is_ctrl(wparam) {
+        //     let mut inner = self.write()?;
+        //     if inner.fresh_ctrl {
+        //         inner.fresh_ctrl = false;
+        //         inner.disabled_by_ctrl = !inner.disabled_by_ctrl
+        //     }
+        // }
         Ok(FALSE)
     }
 
@@ -179,80 +179,78 @@ fn is_ctrl(wparam: WPARAM) -> bool {
 }
 
 impl TextServiceInner {
-    // fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
-    //     //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-    //         // let hkl = self.hkl.ok_or(Error::HKLMissing)?;
-    //         let hkl = self.hkl;
-    //         let input = match keycode {
-    //             0x08 => Backspace,
-    //             0x09 => Tab,
-    //             0x0D => Enter,
-    //             0x20 => Space,
-    //             0x25 => Left,
-    //             0x26 => Up,
-    //             0x27 => Right,
-    //             0x28 => Down,
-    //             keycode @ 0x00..0x20 | keycode @ 0x7F => Unknown(keycode),
-    //             keycode => {
-    //                 let mut buf = [0; 8];
-    //                 let mut keyboard_state = [0; 256];
-    //                 let ret = unsafe {
-    //                     GetKeyboardState(&mut keyboard_state)?;
-    //                     ToUnicodeEx(keycode, scancode, &keyboard_state, &mut buf, 0, hkl)
-    //                 };
-    //                 if ret == 0 {
-    //                     return Ok(Unknown(keycode));
-    //                 }
-    //                 let Ok(ch) = char::try_from_utf16(buf[0]) else {
-    //                     return Ok(Unknown(keycode));
-    //                 };
-    //                 match ch {
-    //                     number @ '0'..='9' => Number(number as usize - '0' as usize),
-    //                     letter @ 'a'..='z' | letter @ 'A'..='Z' => Letter(letter),
-    //                     punct => Punct(punct),
-    //                 }
-    //             }
-    //         };
-    //         Ok(input)
-
-    // }
-
     fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
+        let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
+        let alt = VK_MENU.is_down();
+        let shift = VK_SHIFT.is_down() || VK_LSHIFT.is_down() || VK_RSHIFT.is_down();
 
-        // let hkl = self.hkl.ok_or(Error::HKLMissing)?;
-        let hkl = self.hkl;
-        let input = match keycode {
-            0x08 => Backspace,
-            0x09 => Tab,
-            0x0D => Enter,
-            0x20 => Space,
-            0x25 => Left,
-            0x26 => Up,
-            0x27 => Right,
-            0x28 => Down,
-            keycode @ 0x00..0x20 | keycode @ 0x7F => Unknown(keycode),
-            keycode => {
-                let mut buf = [0; 8];
-                let mut keyboard_state = [0; 256];
-                let ret = unsafe {
-                    GetKeyboardState(&mut keyboard_state)?;
-                    ToUnicodeEx(keycode, scancode, &keyboard_state, &mut buf, 0, hkl)
-                };
-                if ret == 0 {
-                    return Ok(Unknown(keycode));
-                }
-                let Ok(ch) = char::try_from_utf16(buf[0]) else {
-                    return Ok(Unknown(keycode));
-                };
-                match ch {
-                    number @ '0'..='9' => Number(number as usize - '0' as usize),
-                    _ => Key(to_keycode(ch, keycode)),
+        log::info!("parse_input: ctrl {ctrl}, alt {alt}, shift {shift}");
+
+        let input = match (ctrl, alt, shift, keycode) {
+            (ctrl, false, false, 0x08) => Backspace(ctrl),
+            (false, false, false, 0x09) => Tab,
+            (false, false, false, 0x0D) => Enter,
+            (false, false, false, 0x20) => Space,
+            (false, false, false, 0x25) => Left,
+            (false, false, false, 0x26) => Up,
+            (false, false, false, 0x27) => Right,
+            (false, false, false, 0x28) => Down,
+            (false, false, false, keycode @ 0x00..0x20) | (false, false, false, keycode @ 0x7F) => Unknown(keycode),
+            (ctrl, alt, shift, keycode) => {
+                // Comprehensive checking for rejecting application shortcuts
+                // and only capture the keys that we care about. 
+                let char_key = self.parse_character_key(keycode, scancode)?;
+
+                if let Key(key) = char_key {
+                    match (ctrl, alt, shift) {
+                        (false, false, false) => char_key,
+                        (false, false, true) => char_key,
+                        (true, true, false) => AltGrKey(key),
+                        (true, true, true) => ShiftAltGr(key),
+                        _ => Unknown(key as u32)
+                    }
+                } else if let Number(key) = char_key {
+                    match (ctrl, alt, shift) {
+                        (false, false, false) => char_key,
+                        (false, false, true) => char_key,
+                        (true, true, false) => AltGrKey(key as u16),
+                        (true, true, true) => ShiftAltGr(key as u16),
+                        _ => Unknown(key as u32)
+                    }
+                } else {
+                    char_key
                 }
             }
         };
         Ok(input)
+    }
+
+    fn parse_character_key(&self, keycode: u32, scancode: u32) -> Result<Input> {
+        let hkl = self.hkl;
+        let mut buf = [0; 8];
+        let mut keyboard_state = [0; 256];
+        let ret = unsafe {
+            GetKeyboardState(&mut keyboard_state)?;
+            ToUnicodeEx(keycode, scancode, &keyboard_state, &mut buf, 0, hkl)
+        };
+        if ret == 0 {
+            return Ok(Unknown(keycode));
+        }
+        let Ok(ch) = char::try_from_utf16(buf[0]) else {
+            return Ok(Unknown(keycode));
+        };
+        match ch {
+            number @ '0'..='9' => Ok(Number(number as usize - '0' as usize)),
+            _ => {
+                let kc = to_keycode(ch, keycode);
+                if kc != UNKNOWN_KEYCODE {
+                    Ok(Key(kc))
+                } else {
+                    Ok(Unknown(kc as u32))
+                }
+            },
+        }
     }
 }
 
@@ -285,8 +283,10 @@ enum Input {
     Number(usize),
     Punct(char),
     Key(u16),
+    AltGrKey(u16),
+    ShiftAltGr(u16),
     Space,
-    Backspace,
+    Backspace(bool), // is Ctrl
     Enter,
     Tab,
     Left,
@@ -311,6 +311,8 @@ impl TextServiceInner {
         if self.composition.is_none() {
             match input {
                 Key(_) => Ok(TRUE),
+                AltGrKey(_) => Ok(TRUE),
+                ShiftAltGr(_) => Ok(TRUE),
                 _ => Ok(FALSE),
             }
         } else {
@@ -366,7 +368,7 @@ impl TextServiceInner {
                     // self.release()?;
                     self.commit(Some('\n'))?;
                 }
-                Backspace => self.pop()?,
+                Backspace(ctrl) => self.pop(ctrl)?,
                 Left => {
                     if let Ok(candidate_list) = self.candidate_list() {
                         candidate_list.move_highlight_prev();

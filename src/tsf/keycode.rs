@@ -5,6 +5,8 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_SUBTRACT,
 };
 
+pub const UNKNOWN_KEYCODE: u16 = 0;
+
 pub fn to_keycode(ch: char, keycode: u32) -> u16 {
     let vk: VIRTUAL_KEY = VIRTUAL_KEY(keycode as u16);
 
@@ -128,6 +130,6 @@ pub fn to_keycode(ch: char, keycode: u32) -> u16 {
         ('/', _) => VC_SLASH,
         ('?', _) => VC_QUESTION,
 
-        _ => panic!("Got unknown character!"),
+        _ => UNKNOWN_KEYCODE,
     }
 }
