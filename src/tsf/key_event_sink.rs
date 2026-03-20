@@ -1,7 +1,6 @@
 use std::ffi::OsString;
 
 use Input::*;
-use Shortcut::*;
 use log::{trace, warn};
 use riti::context::{MODIFIER_ALT_GR, MODIFIER_SHIFT};
 use windows::{
@@ -9,8 +8,7 @@ use windows::{
         Foundation::{BOOL, E_FAIL, FALSE, LPARAM, TRUE, WPARAM},
         UI::{
             Input::KeyboardAndMouse::{
-                GetKeyboardState, MapVirtualKeyExW, MAPVK_VK_TO_VSC, ToUnicodeEx, VK_CAPITAL,
-                VK_CONTROL, VK_KANJI, VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_MENU, VK_RCONTROL,
+                GetKeyboardState, MapVirtualKeyExW, MAPVK_VK_TO_VSC, ToUnicodeEx, VK_CONTROL, VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_MENU, VK_RCONTROL,
                 VK_RMENU, VK_RSHIFT, VK_SHIFT,
             },
             TextServices::{
@@ -24,7 +22,7 @@ use windows::{
 
 use super::{TextService, TextServiceInner, edit_session};
 use crate::{
-    conf::{Toggle, load_riti_config},
+    conf::load_riti_config,
     extend::{CharExt, GUIDExt, OsStrExt2, VKExt},
     tsf::keycode::{UNKNOWN_KEYCODE, to_keycode},
 };
@@ -56,30 +54,12 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         lparam: LPARAM,
     ) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
         trace!("OnTestKeyDown({:#04X})", wparam.0);
-        let mut inner = self.write()?;
-        // // track ctrl
-        // inner.fresh_ctrl = is_ctrl(wparam);
-        // // detect shortcut
-        // if let Some(shortcut) = Shortcut::try_from(wparam.0) {
-        //     return inner.test_shortcut(shortcut);
-        // }
+
+        let inner = self.write()?;
+        
         let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-        // // the IME is disabled by capslock.
-        // // The letters should be converted to lowercase
-        // if inner.disabled_by_capslock() {
-        //     inner.abort()?;
-        //     return inner.test_uppercase_input(input);
-        // }
-        // // The IME is disabled by ctrl/eisu or the user wants to
-        // // typer uppercase letters with the good old capslock.
-        // // Simply disable the IME completely solves the problem.
-        // if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
-        //     inner.abort()?;
-        //     return Ok(FALSE);
-        // }
+        
         inner.test_input(input)
     }
 
@@ -93,23 +73,12 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         lparam: LPARAM,
     ) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
         trace!("OnKeyDown({:#04X})", wparam.0);
+
         let mut inner = self.write()?;
-        // inner.fresh_ctrl = is_ctrl(wparam);
-        // if let Some(shortcut) = Shortcut::try_from(wparam.0) {
-        //     return inner.handle_shortcut(shortcut);
-        // }
+        
         let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-        // if inner.disabled_by_capslock() {
-        //     inner.abort()?;
-        //     return inner.handle_uppercase_input(input, context);
-        // }
-        // if inner.disabled_naively() || VK_CAPITAL.is_toggled() {
-        //     inner.abort()?;
-        //     return Ok(FALSE);
-        // }
+        
         inner.handle_input(input, context)
     }
 
@@ -120,16 +89,8 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         _lparam: LPARAM,
     ) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
         trace!("OnTestKeyUp({:#04X})", wparam.0);
-        // if is_ctrl(wparam) {
-        //     let mut inner = self.write()?;
-        //     if inner.fresh_ctrl {
-        //         inner.fresh_ctrl = false;
-        //         inner.disabled_by_ctrl = !inner.disabled_by_ctrl
-        //     }
-        // }
+        
         Ok(FALSE)
     }
 
@@ -139,16 +100,8 @@ impl ITfKeyEventSink_Impl for TextService {
         wparam: WPARAM,
         _lparam: LPARAM,
     ) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
         trace!("OnKeyUp({:#04X})", wparam.0);
-        // if is_ctrl(wparam) {
-        //     let mut inner = self.write()?;
-        //     if inner.fresh_ctrl {
-        //         inner.fresh_ctrl = false;
-        //         inner.disabled_by_ctrl = !inner.disabled_by_ctrl
-        //     }
-        // }
+        
         Ok(FALSE)
     }
 
@@ -190,8 +143,6 @@ impl ITfKeyEventSink_Impl for TextService {
     }
 
     fn OnSetFocus(&self, foreground: BOOL) -> Result<()> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
         trace!("OnSetFocus({})", foreground.as_bool());
         if !foreground.as_bool() {
             self.write()?.abort()
@@ -199,14 +150,6 @@ impl ITfKeyEventSink_Impl for TextService {
             Ok(())
         }
     }
-}
-
-fn is_ctrl(wparam: WPARAM) -> bool {
-    //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-    wparam.0 == VK_CONTROL.0 as usize
-        || wparam.0 == VK_LCONTROL.0 as usize
-        || wparam.0 == VK_RCONTROL.0 as usize
 }
 
 impl TextServiceInner {
@@ -293,34 +236,11 @@ impl TextServiceInner {
     }
 }
 
-#[derive(Debug)]
-enum Shortcut {
-    NextSchema,
-    Undefined,
-}
-
-impl Shortcut {
-    fn try_from(key_code: usize) -> Option<Shortcut> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
-        let alt = VK_MENU.is_down();
-        let shift = VK_SHIFT.is_down() || VK_LSHIFT.is_down() || VK_RSHIFT.is_down();
-        match (ctrl, alt, shift, key_code) {
-            (true, false, true, 0x4E) => Some(NextSchema), // Ctrl + Shift + N
-            (true, ..) | (_, true, ..) => Some(Undefined),
-            _ => None,
-        }
-    }
-}
-
 /// Inputs that are easier to understand and handle.
 /// See https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes for keycodes.
 #[derive(Debug, Clone, Copy)]
 enum Input {
-    Letter(char),
     Number(usize),
-    Punct(char),
     Key(u16),
     AltGrKey(u16),
     ShiftAltGr(u16),
@@ -404,14 +324,6 @@ impl TextServiceInner {
                     self.start_composition()?;
                     self.keypress(key, MODIFIER_SHIFT ^ MODIFIER_ALT_GR)?
                 }
-                // Punct(punct) => {
-                //     let ch = self.engine.remap_punct(punct);
-                //     self.insert_char(ch)?
-                // }
-                // Space => {
-                //     let ch = self.engine.remap_punct(' ');
-                //     self.insert_char(ch)?
-                // }
                 _ => return Ok(FALSE),
             }
         } else {
@@ -454,97 +366,6 @@ impl TextServiceInner {
         self.char_buf.push(ch);
         let text = OsString::from(&self.char_buf).to_wchars();
         edit_session::insert_text(self.tid, self.context()?, &text)
-    }
-
-    fn test_shortcut(&self, shortcut: Shortcut) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        if self.composition.is_none() {
-            match shortcut {
-                NextSchema => Ok(TRUE),
-                _ => Ok(FALSE),
-            }
-        } else {
-            Ok(FALSE)
-        }
-    }
-
-    fn handle_shortcut(&mut self, shortcut: Shortcut) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        if self.composition.is_none() {
-            match shortcut {
-                NextSchema => {
-                    // self.engine.next_schema();
-                    Ok(TRUE)
-                }
-                _ => Ok(FALSE),
-            }
-        } else {
-            Ok(FALSE)
-        }
-    }
-}
-
-//----------------------------------------------------------------------------
-//
-//  The input method can be temporaly disabled by CapsLock/Eisu/Ctrl or some other
-//  user-configured key. In such cases we simply redirect the original input
-//  to the client, with the (ascii or non-ascii) letters lowered.
-//
-//----------------------------------------------------------------------------
-
-impl TextServiceInner {
-    fn disabled_naively(&self) -> bool {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        match Some(Toggle::Ctrl) {
-            Some(Toggle::Ctrl) => self.disabled_by_ctrl,
-            Some(Toggle::Eisu) => VK_KANJI.is_toggled(),
-            Some(Toggle::CapsLock) | None => false,
-        }
-    }
-
-    fn disabled_by_capslock(&self) -> bool {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        match Some(Toggle::Ctrl) {
-            Some(Toggle::Ctrl) | Some(Toggle::Eisu) | None => false,
-            Some(Toggle::CapsLock) => VK_CAPITAL.is_toggled(),
-        }
-    }
-
-    fn test_uppercase_input(&self, input: Input) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        trace!("test_uppercase_input({:?})", input);
-        // non-ascii letters are actually categorized under Punct... my bad.
-        match input {
-            Letter(_) | Punct(_) => Ok(TRUE),
-            _ => Ok(FALSE),
-        }
-    }
-
-    fn handle_uppercase_input(
-        &mut self,
-        input: Input,
-        context: Option<&ITfContext>,
-    ) -> Result<BOOL> {
-        //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
-
-        trace!("handle_uppercase_input({:?})", input);
-        let Some(context) = context else {
-            warn!("Context is None");
-            return Ok(FALSE);
-        };
-        self.context = Some(context.clone());
-        match input {
-            Letter(ch) | Punct(ch) => {
-                self.insert_char(ch.to_lowercase().next().unwrap_or(ch))?;
-                Ok(TRUE)
-            }
-            _ => Ok(FALSE),
-        }
     }
 }
 
