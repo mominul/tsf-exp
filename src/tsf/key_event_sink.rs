@@ -6,8 +6,9 @@ use windows::{
         Foundation::{BOOL, E_FAIL, FALSE, LPARAM, TRUE, WPARAM},
         UI::{
             Input::KeyboardAndMouse::{
-                GetKeyboardState, MapVirtualKeyExW, MAPVK_VK_TO_VSC, ToUnicodeEx, VK_CONTROL, VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_MENU, VK_RCONTROL,
-                VK_RMENU, VK_RSHIFT, VK_SHIFT,
+                GetKeyboardState, MAPVK_VK_TO_VSC, MapVirtualKeyExW, ToUnicodeEx, VK_CONTROL,
+                VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_MENU, VK_RCONTROL, VK_RMENU, VK_RSHIFT,
+                VK_SHIFT,
             },
             TextServices::{
                 ITfContext, ITfKeyEventSink_Impl, ITfKeystrokeMgr, TF_MOD_ALT, TF_MOD_CONTROL,
@@ -54,9 +55,9 @@ impl ITfKeyEventSink_Impl for TextService {
         trace!("OnTestKeyDown({:#04X})", wparam.0);
 
         let inner = self.write()?;
-        
+
         let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-        
+
         inner.test_input(input)
     }
 
@@ -73,9 +74,9 @@ impl ITfKeyEventSink_Impl for TextService {
         trace!("OnKeyDown({:#04X})", wparam.0);
 
         let mut inner = self.write()?;
-        
+
         let input = inner.parse_input(wparam.0 as u32, lparam.0 as u32)?;
-        
+
         inner.handle_input(input, context)
     }
 
@@ -87,7 +88,7 @@ impl ITfKeyEventSink_Impl for TextService {
         _lparam: LPARAM,
     ) -> Result<BOOL> {
         trace!("OnTestKeyUp({:#04X})", wparam.0);
-        
+
         Ok(FALSE)
     }
 
@@ -98,17 +99,14 @@ impl ITfKeyEventSink_Impl for TextService {
         _lparam: LPARAM,
     ) -> Result<BOOL> {
         trace!("OnKeyUp({:#04X})", wparam.0);
-        
+
         Ok(FALSE)
     }
 
     fn OnPreservedKey(&self, context: Option<&ITfContext>, rguid: *const GUID) -> Result<BOOL> {
         let guid = unsafe { rguid.as_ref() }.ok_or(E_FAIL)?;
         let Some((vkey, shift)) = decode_preserved_key_guid(guid) else {
-            trace!(
-                "OnPreservedKey: unknown GUID {:?}",
-                GUID::to_rfc4122(guid)
-            );
+            trace!("OnPreservedKey: unknown GUID {:?}", GUID::to_rfc4122(guid));
             return Ok(FALSE);
         };
 
@@ -153,44 +151,27 @@ impl TextServiceInner {
     fn parse_input(&self, keycode: u32, scancode: u32) -> Result<Input> {
         //log::info!("[{}:{};{}] {}()", file!(), line!(), column!(), crate::function!());
         let ctrl = VK_CONTROL.is_down() || VK_LCONTROL.is_down() || VK_RCONTROL.is_down();
-        let alt = VK_MENU.is_down() || VK_LMENU.is_down() || VK_RMENU.is_down();
-        let shift = VK_SHIFT.is_down() || VK_LSHIFT.is_down() || VK_RSHIFT.is_down();
 
-        log::info!("parse_input: ctrl {ctrl}, alt {alt}, shift {shift}");
+        let input = match keycode {
+            0x08 => Backspace(ctrl),
+            0x09 => Tab,
+            0x0D => Enter,
+            0x20 => Space,
+            0x25 => Left,
+            0x26 => Up,
+            0x27 => Right,
+            0x28 => Down,
+            keycode @ 0x00..0x20 | keycode @ 0x7F => Unknown(keycode),
+            keycode => {
+                let key = self.parse_character_key(keycode, scancode)?;
 
-        let input = match (ctrl, alt, shift, keycode) {
-            (ctrl, false, false, 0x08) => Backspace(ctrl),
-            (false, false, false, 0x09) => Tab,
-            (false, false, false, 0x0D) => Enter,
-            (false, false, false, 0x20) => Space,
-            (false, false, false, 0x25) => Left,
-            (false, false, false, 0x26) => Up,
-            (false, false, false, 0x27) => Right,
-            (false, false, false, 0x28) => Down,
-            (false, false, false, keycode @ 0x00..0x20) | (false, false, false, keycode @ 0x7F) => Unknown(keycode),
-            (ctrl, alt, shift, keycode) => {
-                // Comprehensive checking for rejecting application shortcuts
-                // and only capture the keys that we care about. 
-                let char_key = self.parse_character_key(keycode, scancode)?;
-
-                if let Key(key) = char_key {
-                    match (ctrl, alt, shift) {
-                        (false, false, false) => char_key,
-                        (false, false, true) => char_key,
-                        (true, true, false) => AltGrKey(key),
-                        (true, true, true) => ShiftAltGr(key),
-                        _ => Unknown(key as u32)
-                    }
-                } else if let Number(key) = char_key {
-                    match (ctrl, alt, shift) {
-                        (false, false, false) => char_key,
-                        (false, false, true) => char_key,
-                        (true, true, false) => AltGrKey(key as u16),
-                        (true, true, true) => ShiftAltGr(key as u16),
-                        _ => Unknown(key as u32)
-                    }
+                // Encode the key as unknown if Ctrl is pressed
+                if let Key(key) = key && ctrl {
+                    Unknown(key as u32)
+                } else if let Number(key) = key && ctrl {
+                    Unknown(key as u32)
                 } else {
-                    char_key
+                    key
                 }
             }
         };
@@ -228,7 +209,7 @@ impl TextServiceInner {
                 } else {
                     Ok(Unknown(kc as u32))
                 }
-            },
+            }
         }
     }
 }
@@ -304,14 +285,14 @@ impl TextServiceInner {
                 AltGrKey(key) => {
                     log::trace!("Starting composition");
                     self.update_engine();
-                    
+
                     self.start_composition()?;
                     self.keypress(key, MODIFIER_ALT_GR)?
                 }
                 ShiftAltGr(key) => {
                     log::trace!("Starting composition");
                     self.update_engine();
-                    
+
                     self.start_composition()?;
                     self.keypress(key, MODIFIER_SHIFT ^ MODIFIER_ALT_GR)?
                 }
@@ -380,9 +361,7 @@ const fn preserved_key_guid(vkey: u8, shift: bool) -> GUID {
 
 /// Decode a preserved key GUID back to (vkey, shift).
 fn decode_preserved_key_guid(guid: &GUID) -> Option<(u32, bool)> {
-    if guid.data1 == 0xCAFEBA0E
-        && guid.data4 == [0x9A, 0xC4, 0x75, 0xF8, 0x42, 0x29, 0x47, 0xF5]
-    {
+    if guid.data1 == 0xCAFEBA0E && guid.data4 == [0x9A, 0xC4, 0x75, 0xF8, 0x42, 0x29, 0x47, 0xF5] {
         Some((guid.data2 as u32, guid.data3 != 0))
     } else {
         None
@@ -392,8 +371,8 @@ fn decode_preserved_key_guid(guid: &GUID) -> Option<(u32, bool)> {
 /// Virtual key codes to register as Ctrl+Alt preserved keys.
 const PRESERVED_VKEYS: &[u32] = &[
     // A-Z
-    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F,
-    0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A,
+    0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50,
+    0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 
     // 0-9
     0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
     // OEM keys: ;: =+ ,< -_ .> /? `~ [{ \| ]} '"
@@ -413,7 +392,10 @@ pub fn register_preserved_keys(keystroke_mgr: &ITfKeystrokeMgr, tid: u32) {
                 uModifiers: modifiers,
             };
             if let Err(e) = unsafe { keystroke_mgr.PreserveKey(tid, &guid, &prekey, &[]) } {
-                trace!("Failed to register preserved key vkey={:#04X} shift={}: {}", vkey, shift, e);
+                trace!(
+                    "Failed to register preserved key vkey={:#04X} shift={}: {}",
+                    vkey, shift, e
+                );
             }
         }
     }
