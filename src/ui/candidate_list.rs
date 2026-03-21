@@ -99,8 +99,6 @@ const HIGHLIGHTED_COLOR: D2D1_COLOR_F = D2D1_COLOR_F {
     a: 1.0,
 }; // black
 
-const WINDOW_VERTICAL: bool = false;
-
 // Vertical offset adjustment for English text to align with Bangla baseline
 const ENGLISH_Y_OFFSET: f32 = -3.0;
 
@@ -203,6 +201,7 @@ struct HighlightState {
     highlighted_index: usize,
     candidate_count: usize,
     candidates: Vec<String>,
+    vertical: bool,
 }
 
 pub struct CandidateList {
@@ -258,6 +257,7 @@ impl CandidateList {
                     highlighted_index: 0,
                     candidate_count: 0,
                     candidates: Vec::new(),
+                    vertical: false,
                 }),
             })
         }
@@ -332,6 +332,13 @@ impl CandidateList {
         self.state.write().unwrap().highlighted_index = 0;
     }
 
+    /// Set the candidate window orientation.
+    /// `true` for vertical (candidates stacked top-to-bottom),
+    /// `false` for horizontal (candidates laid out left-to-right).
+    pub fn set_vertical(&self, vertical: bool) {
+        self.state.write().unwrap().vertical = vertical;
+    }
+
     /// Trigger a repaint of the window with updated highlight.
     fn invalidate(&self) {
         let _ = self.repaint(false);
@@ -353,12 +360,12 @@ impl CandidateList {
     fn repaint(&self, resize: bool) -> Result<()> {
         unsafe {
             // Copy data out of state and release lock early
-            let (highlighted_index, suggs) = {
+            let (highlighted_index, suggs, vertical) = {
                 let state = self.state.read().unwrap();
                 if state.candidates.is_empty() {
                     return Ok(());
                 }
-                (state.highlighted_index, state.candidates.clone())
+                (state.highlighted_index, state.candidates.clone(), state.vertical)
             };
 
             // Create DirectWrite text formats for measurement
@@ -432,7 +439,7 @@ impl CandidateList {
             let mut wnd_height: f32 = 0.0;
             let mut wnd_width: f32 = 0.0;
 
-            if WINDOW_VERTICAL {
+            if vertical {
                 let candi_num = suggs.len().min(CANDI_NUM) as f32;
                 wnd_height += candi_num * label_height;
                 let max_candi_width = candi_widths.iter().cloned().fold(0.0f32, f32::max);
@@ -457,7 +464,7 @@ impl CandidateList {
             wnd_width += (BORDER_WIDTH * 2) as f32;
 
             // Calculate highlight width based on the highlighted candidate
-            let highlight_width = if WINDOW_VERTICAL {
+            let highlight_width = if vertical {
                 wnd_width - CLIP_WIDTH as f32 - (BORDER_WIDTH * 2) as f32
             } else {
                 LABEL_PADDING_LEFT as f32
@@ -479,6 +486,7 @@ impl CandidateList {
                 index_font_size: self.index_font_size,
                 font_name: FONT_NAME.to_owned(),
                 highlighted_index,
+                vertical,
             };
             let long_ptr = arg.into_long_ptr();
             SetWindowLongPtrA(self.window, WINDOW_LONG_PTR_INDEX::default(), long_ptr);
@@ -523,6 +531,7 @@ struct PaintArg {
     index_font_size: f32,
     font_name: String,
     highlighted_index: usize,
+    vertical: bool,
 }
 
 impl PaintArg {
@@ -640,7 +649,7 @@ fn paint(window: HWND) -> LRESULT {
         let highlight_x: f32;
         let highlight_y: f32;
 
-        if WINDOW_VERTICAL {
+        if arg.vertical {
             highlight_x = (BORDER_WIDTH + CLIP_WIDTH) as f32;
             highlight_y = BORDER_WIDTH as f32 + (arg.highlighted_index as f32 * arg.label_height);
         } else {
@@ -659,7 +668,7 @@ fn paint(window: HWND) -> LRESULT {
 
         // Draw clip (always at top-left, next to highlighted item in vertical mode)
         if let Ok(clip_brush) = rt.CreateSolidColorBrush(&CLIP_COLOR, None) {
-            let clip_y = if WINDOW_VERTICAL {
+            let clip_y = if arg.vertical {
                 highlight_y
             } else {
                 BORDER_WIDTH as f32
@@ -712,7 +721,7 @@ fn paint(window: HWND) -> LRESULT {
         // Draw all items, using highlighted color for the selected one
         for i in 0..arg.candis.len() {
             if i > 0 {
-                if WINDOW_VERTICAL {
+                if arg.vertical {
                     text_y += arg.label_height;
                 } else {
                     index_x += arg.index_width

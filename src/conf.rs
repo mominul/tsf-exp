@@ -104,12 +104,7 @@ impl Settings {
     }
 }
 
-pub fn load_riti_config() -> Config {
-    let Ok(settings) = Settings::load_or_create() else {
-        log::error!("Failed to load settings from registry. Using default Riti config.");
-        return Config::default();
-    };
-
+pub fn set_riti_config(settings: &Settings) -> Config {
     let mut config = Config::default();
     config.set_layout_file_path(&settings.get_layout_path());
     config.set_database_dir("");
@@ -127,7 +122,7 @@ pub fn load_riti_config() -> Config {
     config.set_ansi_encoding(settings.get_ansi_encoding());
     config.set_smart_quote(settings.get_smart_quoting());
 
-    log::info!("Config {:?}", config);
+    log::info!("Loaded Riti Config {:?}", config);
 
     config
 }

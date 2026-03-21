@@ -20,7 +20,6 @@ use windows::{
 
 use super::{TextService, TextServiceInner};
 use crate::{
-    conf::load_riti_config,
     extend::{CharExt, GUIDExt, VKExt},
     tsf::keycode::{UNKNOWN_KEYCODE, to_keycode},
 };
@@ -297,27 +296,21 @@ impl TextServiceInner {
                 // letters start compositions. punctuators need to be re-mapped.
                 Key(key) => {
                     log::trace!("Starting composition");
-                    let riti_config = load_riti_config();
-                    log::trace!("Riti config loaded: {:?}", riti_config);
-                    self.riti.update_engine(&riti_config);
+                    self.update_engine();
 
                     self.start_composition()?;
                     self.keypress(key, 0)?
                 }
                 AltGrKey(key) => {
                     log::trace!("Starting composition");
-                    let riti_config = load_riti_config();
-                    log::trace!("Riti config loaded: {:?}", riti_config);
-                    self.riti.update_engine(&riti_config);
+                    self.update_engine();
                     
                     self.start_composition()?;
                     self.keypress(key, MODIFIER_ALT_GR)?
                 }
                 ShiftAltGr(key) => {
                     log::trace!("Starting composition");
-                    let riti_config = load_riti_config();
-                    log::trace!("Riti config loaded: {:?}", riti_config);
-                    self.riti.update_engine(&riti_config);
+                    self.update_engine();
                     
                     self.start_composition()?;
                     self.keypress(key, MODIFIER_SHIFT ^ MODIFIER_ALT_GR)?

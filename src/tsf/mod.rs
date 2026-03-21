@@ -28,7 +28,7 @@ use windows::{
     core::{AsImpl, Interface, Result, VARIANT, implement},
 };
 
-use crate::{conf::load_riti_config, global::IME_KEYBOARD_US, ui::candidate_list::CandidateList};
+use crate::{conf::{Settings, set_riti_config}, global::IME_KEYBOARD_US, ui::candidate_list::CandidateList};
 
 //----------------------------------------------------------------------------
 //
@@ -80,10 +80,14 @@ struct TextServiceInner {
 impl TextService {
     #[logfn(err = "Error")]
     pub fn create() -> Result<ITfTextInputProcessor> {
-        let riti_config = load_riti_config();
+        let Ok(settings) = Settings::load_or_create() else {
+            panic!("Failed to load settings from registry.");
+        };
+
+        let config = set_riti_config(&settings);
 
         let inner = TextServiceInner {
-            riti: RitiContext::new_with_config(&riti_config),
+            riti: RitiContext::new_with_config(&config),
             tid: 0,
             thread_mgr: None,
             context: None,
@@ -159,14 +163,6 @@ impl TextServiceInner {
     }
 
     fn candidate_list(&self) -> Result<&CandidateList> {
-        log::info!(
-            "[{}:{};{}] {}()",
-            file!(),
-            line!(),
-            column!(),
-            crate::function!()
-        );
-
         self.candidate_list.as_ref().ok_or(E_FAIL.into())
     }
 
@@ -185,19 +181,24 @@ impl TextServiceInner {
     }
 
     fn assure_candidate_list(&mut self) -> Result<()> {
-        log::info!(
-            "[{}:{};{}] {}()",
-            file!(),
-            line!(),
-            column!(),
-            crate::function!()
-        );
-
         if self.candidate_list.is_some() {
             Ok(())
         } else {
             debug!("Previous creation of candidate list failed. Recreating now.");
             self.create_candidate_list()
+        }
+    }
+
+    fn update_engine(&mut self) {
+        let Ok(settings) = Settings::load_or_create() else {
+            panic!("Failed to load settings from registry.");
+        };
+
+        let config = set_riti_config(&settings);
+        self.riti.update_engine(&config);
+
+        if let Some(candidate_list) = &self.candidate_list {
+            candidate_list.set_vertical(!settings.get_candidate_win_horizontal());
         }
     }
 }
