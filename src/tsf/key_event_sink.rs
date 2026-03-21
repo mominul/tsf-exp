@@ -332,12 +332,12 @@ impl TextServiceInner {
                     self.commit(Some('\n'))?;
                 }
                 Backspace(ctrl) => self.pop(ctrl)?,
-                Left => {
+                Left | Up => {
                     if let Ok(candidate_list) = self.candidate_list() {
                         candidate_list.move_highlight_prev();
                     }
                 }
-                Tab | Right => {
+                Tab | Right | Down => {
                     if let Ok(candidate_list) = self.candidate_list() {
                         candidate_list.move_highlight_next();
                     }

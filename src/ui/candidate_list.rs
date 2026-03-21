@@ -449,7 +449,6 @@ impl CandidateList {
                     + INDEX_CANDI_GAP as f32
                     + max_candi_width
                     + LABEL_PADDING_RIGHT as f32;
-                wnd_width = wnd_width.max(wnd_height * 4.0 / 5.0);
             } else {
                 wnd_height += label_height;
                 wnd_width += CLIP_WIDTH as f32;
